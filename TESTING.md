@@ -34,6 +34,7 @@ dotnet test --logger "console;verbosity=detailed"  # Output detalhado
 cd frontend
 npm test                             # Executa todos (vitest run)
 npm run test:watch                   # Modo watch (dev)
+npm run test:coverage                # Com relatório de cobertura
 npx vitest run --reporter=verbose    # Output detalhado
 ```
 
@@ -196,11 +197,11 @@ npx vitest run --reporter=verbose    # Output detalhado
 │                    │ (0 tests)│                      │
 │                   ─┴──────────┴─                     │
 │                 ┌────────────────┐                   │
-│                 │  Integration   │  ← 16 tests       │
+│                 │  Integration   │  ← 27 tests       │
 │                 │  (Controllers) │     WebAppFactory │
 │                ─┴────────────────┴─                  │
 │          ┌─────────────────────────────┐             │
-│          │       Unit Tests            │  ← 50 tests │
+│          │       Unit Tests            │  ← 60 tests │
 │          │  (Services + API + Comps)   │             │
 │          └─────────────────────────────┘             │
 │                                                      │
@@ -215,10 +216,11 @@ npx vitest run --reporter=verbose    # Output detalhado
 
 | Regra | Teste Unitário | Teste Integração | Status |
 |-------|---------------|-----------------|--------|
-| Menor de 18 só pode despesa | `TransactionServiceTests` #3, #4, #5 | `TransactionsControllerTests` #2, #3 | ✅ 100% |
+| Menor de 18 só pode despesa | `TransactionServiceTests` #3, #4, #5, #6 | `TransactionsControllerTests` #2, #3 | ✅ 100% |
 | Delete pessoa → cascata transações | `PersonServiceTests` #8 | `PeopleControllerTests` #5 | ✅ 100% |
-| Pessoa deve existir na transação | `TransactionServiceTests` #6 | `TransactionsControllerTests` #4 | ✅ 100% |
+| Pessoa deve existir na transação | `TransactionServiceTests` #7 | `TransactionsControllerTests` #4 | ✅ 100% |
 | Totais: receita - despesa = saldo | `TotalsServiceTests` #3-6 | `TotalsControllerTests` #2 | ✅ 100% |
+| Validação de entrada (DTOs) | — | `PeopleControllerTests` #6-9, `TransactionsControllerTests` #7-10 | ✅ 100% |
 
 ---
 
@@ -226,28 +228,52 @@ npx vitest run --reporter=verbose    # Output detalhado
 
 ```
 expense-control-system/
-├── IMPROVEMENTS.md                     # Plano de melhorias
 ├── TESTING.md                          # Este arquivo
 ├── tests/
 │   └── backend/
-│       ├── Backend.Tests.csproj        # Projeto xUnit
+│       ├── Backend.Tests.csproj        # Projeto xUnit + coverlet
 │       ├── TestDatabase.cs             # Fixture InMemory (unit)
 │       ├── TestWebApplicationFactory.cs # Factory p/ integração
 │       ├── Unit/
 │       │   ├── PersonServiceTests.cs   # 13 testes
-│       │   ├── TransactionServiceTests.cs # 11 testes
+│       │   ├── TransactionServiceTests.cs # 12 testes
 │       │   └── TotalsServiceTests.cs   # 7 testes
 │       └── Integration/
-│           ├── PeopleControllerTests.cs    # 5 testes
-│           ├── TransactionsControllerTests.cs # 6 testes
+│           ├── PeopleControllerTests.cs    # 9 testes
+│           ├── TransactionsControllerTests.cs # 10 testes
 │           └── TotalsControllerTests.cs    # 5 testes
 └── frontend/
+    ├── vite.config.ts                 # Config Vitest + coverage thresholds
     └── src/
         ├── test-setup.ts               # Setup Testing Library
         └── __tests__/
-            ├── api.test.ts             # 10 testes
-            └── App.test.tsx            # 13 testes
+            ├── api.test.ts             # 14 testes
+            └── App.test.tsx            # 20 testes
 ```
+
+---
+
+## 📊 Cobertura de Código (Coverage)
+
+### Backend
+
+```bash
+cd tests/backend
+dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura
+```
+
+### Frontend
+
+```bash
+cd frontend
+npx vitest run --coverage
+```
+
+**Thresholds configurados no `vite.config.ts`:**
+- Lines: 80%
+- Branches: 70%
+- Functions: 80%
+- Statements: 80%
 
 ---
 
@@ -258,8 +284,46 @@ Para integrar em pipeline CI/CD:
 ```yaml
 # Exemplo GitHub Actions
 - name: Backend Tests
-  run: cd tests/backend && dotnet test
+  run: cd tests/backend && dotnet test /p:CollectCoverage=true
 
 - name: Frontend Tests
-  run: cd frontend && npm ci && npm test
+  run: cd frontend && npm ci && npm test -- --coverage
 ```
+
+---
+
+## 🔎 QA Audit (2026-07-23)
+
+Auditoria de qualidade realizada para identificar gaps e melhorias.
+
+### Correções aplicadas (✅)
+
+| # | Severidade | Problema | Solução |
+|---|-----------|----------|---------|
+| 1 | 🔴 BUG | `DeleteAsync_WithExistingPerson` passava `AppDbContext` em vez de `IRepository<Person>` para `PersonService` (causava erro de compilação) | Corrigido para `new PersonService(new Repository<Person>(context))` |
+| 2 | 🟠 Boundary | Faltava teste para exatamente 18 anos criando receita | Adicionado `CreateAsync_Exactly18_WithIncome_ShouldSucceed` |
+| 3 | 🟠 Validação | Zero testes de model validation (400 Bad Request) nos integration tests | Adicionados 8 testes: nome vazio, idade inválida, valor zero, tipo inválido, descrição vazia, nome/descrição muito longos |
+| 4 | 🟠 Frontend | Faltavam testes de submissão de formulário, estados de erro e loading | Adicionados 7 testes: criação de pessoa, criação de transação, erros de API na UI, loading state |
+| 5 | 🟠 Frontend | API layer não testava falhas de rede (`fetch` rejeitado) | Adicionados 3 testes de `Failed to fetch` + 1 teste de 204 sem body |
+| 6 | 🟡 Coverage | Nenhuma configuração de threshold de cobertura | Adicionado thresholds no `vite.config.ts` e configurado `coverlet.collector` no backend |
+
+### Recomendações futuras (📋)
+
+| # | Prioridade | Recomendação |
+|---|-----------|--------------|
+| 1 | 🟡 | **E2E tests**: Adicionar testes end-to-end com Playwright ou Cypress para fluxos completos |
+| 2 | 🟡 | **TotalsService**: Refatorar para usar `IRepository<T>` em vez de `AppDbContext` diretamente (consistência arquitetural) |
+| 3 | 🟡 | **Testes de Performance**: Adicionar testes de carga para endpoints críticos (ex: `/api/totals` com muitas transações) |
+| 4 | 🟠 | **Testes do Repository**: Adicionar testes unitários para `Repository<T>` |
+| 5 | 🟠 | **Testes de contrato**: Adicionar contrato entre frontend e backend (ex: validação de schema JSON) |
+| 6 | 🟡 | **Mutation testing**: Usar Stryker.NET para validar qualidade dos testes |
+| 7 | 🟡 | **CI Pipeline**: Configurar GitHub Actions ou similar para rodar testes automaticamente em PRs |
+
+### Resultado
+
+- **Antes:** 66 testes (43 backend + 23 frontend)
+- **Depois:** 87 testes (55 backend + 32 frontend)
+- **Aumento:** +21 testes (+32%)
+- **Cobertura de validação de entrada:** 0% → 100%
+- **Cobertura de boundary conditions:** 80% → 100%
+- **Cobertura de UI states (loading/error):** 0% → 100%

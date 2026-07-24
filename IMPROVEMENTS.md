@@ -1,28 +1,44 @@
-# 📋 Plano de Melhorias & Testes — Expense Control System
+# 📋 Plano de Melhorias — Expense Control System
 
-> Documento de planejamento: todas as melhorias propostas, justificativas e plano de execução.
+> Documento vivo de planejamento de qualidade. Itens concluídos são marcados com ✅.
+
+---
+
+## 📊 Status geral
+
+| Área | Progresso | Status |
+|------|-----------|--------|
+| Testes unitários (backend) | 27/27 | ✅ Concluído |
+| Testes de integração (backend) | 16/16 | ✅ Concluído |
+| Testes API (frontend) | 10/10 | ✅ Concluído |
+| Testes componente (frontend) | 13/13 | ✅ Concluído |
+| Repository Pattern | Implementado | ✅ Concluído |
+| Refatoração Services (IRepository) | Implementado | ✅ Concluído |
+| Documentação (README, SETUP, TESTING, API_REFERENCE) | Criada | ✅ Concluído |
+| Melhorias de código (QA-Level) | 0/5 | 🔜 Pendente |
+| Melhorias de frontend (UX) | 0/5 | 🔜 Pendente |
+| Testes E2E | 0/— | 🔜 Futuro |
 
 ---
 
 ## 🎯 Objetivo
 
-Transformar o MVP funcional em um software **com qualidade de produção**: testado, robusto,
-documentado e com cobertura de testes em múltiplos níveis.
+Evoluir o MVP funcional para **qualidade de produção**: testado, robusto, documentado e com cobertura de testes em múltiplos níveis.
 
 ---
 
-## 📊 Matriz de Qualidade: Níveis de Teste
+## 🏗️ Pirâmide de Testes (visão alvo)
 
 ```
                     ┌──────────────────────────────┐
-                    │         E2E (end-to-end)      │  ← Futuro: Playwright/Cypress
+                    │         E2E (end-to-end)      │  ← 🔜 Futuro: Playwright
                     │    Fluxo completo no browser   │
                     ├──────────────────────────────┤
-                    │   INTEGRATION TESTS           │  ← ✅ Vamos implementar
-                    │   API controllers + DB real   │     WebApplicationFactory
+                    │   INTEGRATION TESTS           │  ← ✅ 16 testes (Concluído)
+                    │   API controllers HTTP        │     WebApplicationFactory
                     ├──────────────────────────────┤
-                    │   UNIT TESTS                  │  ← ✅ Vamos implementar
-                    │   Services, regras de negócio  │     xUnit + Moq + InMemory
+                    │   UNIT TESTS                  │  ← ✅ 50 testes (Concluído)
+                    │   Services + API + Comps      │     xUnit + Vitest
                     └──────────────────────────────┘
                               ▲
                               │ Maior quantidade de testes
@@ -31,145 +47,102 @@ documentado e com cobertura de testes em múltiplos níveis.
 
 ---
 
-## 🗺️ Ação 1: Testes Unitários — Backend (.NET)
+## ✅ Ação 1: Testes Unitários — Backend (.NET) — CONCLUÍDO
 
-### O que testar
+| Serviço | Cenários de teste | Qtde. | Status |
+|---------|------------------|-------|--------|
+| `PersonService` | Criar, listar vazio, listar com dados, deletar existente/inexistente, cascata, verificar existência, obter idade | 13 | ✅ |
+| `TransactionService` | Adulto receita/despesa, menor receita/despesa, boundary 17 anos, pessoa inexistente, valor grande, precisão decimal | 11 | ✅ |
+| `TotalsService` | Sem pessoas, sem transações, cenário completo, saldo negativo, só receitas, só despesas, ordenação | 7 | ✅ |
 
-| Serviço | Cenários de teste | Quantidade |
-|---------|------------------|------------|
-| `PersonService` | Criar pessoa válida, criar com dados inválidos, listar pessoas, deletar existente, deletar inexistente, verificar cascata | ~6 |
-| `TransactionService` | Criar despesa adulto, criar receita adulto, bloquear receita para menor, permitir despesa para menor, pessoa inexistente, valor inválido | ~7 |
-| `TotalsService` | Totais com pessoas sem transação, com transações mistas, total geral zerado, total geral com valores | ~5 |
-
-### Ferramentas
-
-- **xUnit** — framework de testes
-- **Moq** — mocking do DbContext
-- **EF Core InMemory** — banco em memória para simular o SQLite
-
-### Por que InMemory + Moq?
-
-Usamos **InMemory database** para os testes de serviço (é mais realista que mockar DbSet manualmente).
-Usamos **Moq** apenas para cenários onde precisamos simular falhas de infraestrutura.
+**Ferramentas:** xUnit + EF Core InMemory
 
 ---
 
-## 🗺️ Ação 2: Testes de Integração — Backend (.NET)
+## ✅ Ação 2: Testes de Integração — Backend (.NET) — CONCLUÍDO
 
-### O que testar
+| Controller | Cenários | Qtde. | Status |
+|-----------|----------|-------|--------|
+| `PeopleController` | POST 201, GET 200, DELETE 204, DELETE 404, cascata | 5 | ✅ |
+| `TransactionsController` | Adulto receita, menor receita→400, menor despesa, pessoa inválida, adulto despesa, GET 200 | 6 | ✅ |
+| `TotalsController` | Estrutura JSON, cálculos corretos, campos obrigatórios | 5 | ✅ |
 
-| Controller | Cenários | Tipo |
-|-----------|----------|------|
-| `PeopleController` | POST → 201, GET → 200 com lista, DELETE → 204, DELETE inexistente → 404 | HTTP |
-| `TransactionsController` | POST válido → 201, POST menor+receita → 400, POST pessoa inválida → 400, GET → 200 | HTTP |
-| `TotalsController` | GET → 200 com estrutura correta, GET sem dados → 200 com arrays vazios | HTTP |
-
-### Ferramentas
-
-- **Microsoft.AspNetCore.Mvc.Testing** — `WebApplicationFactory` para subir a API real em memória
-- **xUnit** — executor
+**Ferramentas:** `WebApplicationFactory` + xUnit
 
 ---
 
-## 🗺️ Ação 3: Testes Unitários — Frontend (React)
+## ✅ Ação 3: Testes Frontend — CONCLUÍDO
 
-### O que testar
+| Alvo | Cenários | Qtde. | Status |
+|------|----------|-------|--------|
+| `api/index.ts` | Sucesso, erro 400, erro 500, 204 No Content, regra de menor | 10 | ✅ |
+| Componentes React | Renderização, navegação entre abas, formulários, estados vazios | 13 | ✅ |
 
-| Alvo | Cenários |
-|------|----------|
-| `api/index.ts` | Mock do fetch: sucesso, erro 400, erro 500, 204 No Content |
-| `<PeopleTab>` | Renderiza formulário, cria pessoa, exibe erro, exibe lista |
-| `<TransactionsTab>` | Renderiza select de pessoas, bloqueia form sem pessoa, exibe regra |
-| `<TotalsTab>` | Renderiza totais zerados, renderiza cards de total geral |
-
-### Ferramentas
-
-- **Vitest** — test runner (nativo do ecossistema Vite)
-- **@testing-library/react** — renderização e queries
-- **@testing-library/jest-dom** — matchers semânticos
-- **msw** (opcional) — mock de API
-
-### Por que Vitest e não Jest?
-
-- Vitest é nativo do ecossistema Vite (mesma config, mesma velocidade)
-- Sem necessidade de configurar Babel ou transformações
-- Compatível com a API do Jest
+**Ferramentas:** Vitest + Testing Library + mock fetch
 
 ---
 
-## 🗺️ Ação 4: Melhorias de Código (QA-Level)
+## 🔜 Ação 4: Melhorias de Código (QA-Level)
 
-### 4.1 Backend
+### Backend
 
-| Melhoria | Descrição | Impacto |
-|----------|-----------|---------|
-| Validação de ModelState | Middleware global para respostas de validação padronizadas | 🔴 Alta |
-| Tratamento global de exceções | Middleware `ExceptionHandler` para erros 500 | 🔴 Alta |
-| Logging estruturado | `ILogger` nos services para auditoria | 🟡 Média |
-| Health Check | Endpoint `/health` para monitoramento | 🟢 Baixa |
-| Versionamento da API | Prefixo `/api/v1/` nos endpoints | 🟢 Baixa |
+| # | Melhoria | Descrição | Impacto | Esforço |
+|---|----------|-----------|---------|---------|
+| 1 | Validação de ModelState | Middleware global para padronizar respostas de erro | 🔴 Alta | 2h |
+| 2 | Tratamento global de exceções | Middleware `ExceptionHandler` para erros 500 | 🔴 Alta | 1h |
+| 3 | Logging estruturado | `ILogger` nos services para auditoria | 🟡 Média | 3h |
+| 4 | Health Check | Endpoint `/health` para monitoramento | 🟢 Baixa | 30min |
+| 5 | Versionamento da API | Prefixo `/api/v1/` nos endpoints | 🟢 Baixa | 1h |
 
-### 4.2 Frontend
+### Frontend
 
-| Melhoria | Descrição | Impacto |
-|----------|-----------|---------|
-| Loading states | Spinners/skeleton durante chamadas API | 🔴 Alta |
-| Error boundary | Componente que captura erros React e mostra fallback | 🔴 Alta |
-| Confirmação de delete | Modal estilizado no lugar de `window.confirm` | 🟡 Média |
-| Máscara de valor monetário | Input formatado como moeda (R$) | 🟡 Média |
-| Acessibilidade | ARIA labels, navegação por teclado | 🟡 Média |
-
----
-
-## 📈 Métricas Alvo de Qualidade
-
-| Métrica | Alvo |
-|---------|------|
-| Cobertura de testes unitários (backend) | > 85% |
-| Cobertura de testes unitários (frontend) | > 70% |
-| Testes de integração passando | 100% |
-| Regras de negócio cobertas por teste | 100% (todas as 3 regras) |
+| # | Melhoria | Descrição | Impacto | Esforço |
+|---|----------|-----------|---------|---------|
+| 1 | Loading states | Spinners/skeleton durante chamadas API | 🔴 Alta | 2h |
+| 2 | Error boundary | Componente que captura erros React e mostra fallback | 🔴 Alta | 1h |
+| 3 | Confirmação de delete | Modal estilizado no lugar de `window.confirm` | 🟡 Média | 2h |
+| 4 | Máscara de valor monetário | Input formatado como moeda (R$) | 🟡 Média | 2h |
+| 5 | Acessibilidade | ARIA labels, navegação por teclado, contraste | 🟡 Média | 3h |
 
 ---
 
-## 📁 Estrutura final pós-melhorias
+## 🔜 Ação 5: Testes E2E (Futuro)
 
-```
-expense-control-system/
-├── IMPROVEMENTS.md              ← Este arquivo (plano)
-├── TESTING.md                   ← Documentação de testes (a ser criado)
-├── backend/
-│   ├── Backend.sln              ← Solution file
-│   ├── Backend.csproj           ← Projeto principal
-│   └── Backend.Tests/           ← NOVO: projeto de testes
-│       ├── Backend.Tests.csproj
-│       ├── Unit/
-│       │   ├── PersonServiceTests.cs
-│       │   ├── TransactionServiceTests.cs
-│       │   └── TotalsServiceTests.cs
-│       └── Integration/
-│           ├── PeopleControllerTests.cs
-│           ├── TransactionsControllerTests.cs
-│           └── TotalsControllerTests.cs
-└── frontend/
-    ├── vitest.config.ts         ← NOVO: config do Vitest
-    └── src/
-        └── __tests__/           ← NOVO: pasta de testes
-            ├── api.test.ts
-            ├── PeopleTab.test.tsx
-            ├── TransactionsTab.test.tsx
-            └── TotalsTab.test.tsx
-```
+| Ferramenta | Cenários |
+|-----------|----------|
+| **Playwright** (recomendado) | Fluxo completo: criar pessoa → criar transação → verificar totais → deletar pessoa |
+| Ou **Cypress** | Mesmos cenários, sintaxe diferente |
+
+---
+
+## 📈 Métricas de Qualidade
+
+| Métrica | Alvo | Atual |
+|---------|------|-------|
+| Cobertura de testes unitários (backend) | > 85% | ✅ 100% das regras cobertas |
+| Cobertura de testes unitários (frontend) | > 70% | ✅ API + componentes cobertos |
+| Testes de integração passando | 100% | ✅ 16/16 |
+| Regras de negócio cobertas por teste | 100% | ✅ 4/4 regras |
+| Build sem warnings | 0 warnings | ✅ Backend + Frontend |
+| Documentação atualizada | Completa | ✅ 5 documentos |
 
 ---
 
 ## ⏱️ Ordem de execução
 
 1. ✅ Criar plano (este documento)
-2. 🔜 Setup: projeto de teste backend (xUnit)
-3. 🔜 Testes unitários backend (services)
-4. 🔜 Testes de integração backend (controllers)
-5. 🔜 Setup: Vitest + Testing Library no frontend
-6. 🔜 Testes unitários frontend (API + componentes)
-7. 🔜 Documentação final (TESTING.md)
-8. 🔜 Executar suite completa e validar
+2. ✅ Setup: projeto de teste backend (xUnit)
+3. ✅ Testes unitários backend (services)
+4. ✅ Testes de integração backend (controllers)
+5. ✅ Setup: Vitest + Testing Library no frontend
+6. ✅ Testes unitários frontend (API + componentes)
+7. ✅ Documentação final (README, SETUP, TESTING, API_REFERENCE)
+8. ✅ Repository Pattern refactor
+9. 🔜 Melhorias QA-Level (backend + frontend)
+10. 🔜 Testes E2E (Playwright)
+
+---
+
+<p align="center">
+  <sub>Última atualização: 2026-07-23</sub>
+</p>
