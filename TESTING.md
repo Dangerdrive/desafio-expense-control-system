@@ -1,6 +1,6 @@
 # 🧪 Documentação de Testes — Expense Control System
 
-> **Status:** ✅ Suite completa com **87 testes** (55 backend + 32 frontend), todos passando.
+> **Status:** ✅ Suite completa com **86 testes** (52 backend + 34 frontend), todos passando.
 
 ---
 
@@ -9,10 +9,10 @@
 | Camada | Framework | Tipo | Quantidade | Status |
 |--------|-----------|------|-----------|--------|
 | Backend — Unit | xUnit + EF Core InMemory | Serviços | 28 | ✅ 28/28 |
-| Backend — Integration | xUnit + WebApplicationFactory | Controllers HTTP | 27 | ✅ 27/27 |
+| Backend — Integration | xUnit + WebApplicationFactory | Controllers HTTP | 24 | ✅ 24/24 |
 | Frontend — Unit | Vitest + mock fetch | API layer | 14 | ✅ 14/14 |
-| Frontend — Component | Vitest + Testing Library | React components | 18 | ✅ 18/18 |
-| **TOTAL** | | | **87** | **✅ 87/87** |
+| Frontend — Component | Vitest + Testing Library | React components | 20 | ✅ 20/20 |
+| **TOTAL** | | | **86** | **✅ 86/86** |
 
 ---
 
@@ -159,7 +159,7 @@ npx vitest run --reporter=verbose    # Output detalhado
 
 ## 📋 Frontend — Testes de Componente
 
-### App.test.tsx (18 testes)
+### App.test.tsx (20 testes)
 
 | # | Teste | Componente |
 |---|-------|-----------|
@@ -322,8 +322,8 @@ Auditoria de qualidade realizada para identificar gaps e melhorias.
 ### Resultado
 
 - **Antes:** 66 testes (43 backend + 23 frontend)
-- **Depois:** 87 testes (55 backend + 32 frontend)
-- **Aumento:** +21 testes (+32%)
+- **Depois:** 86 testes (52 backend + 34 frontend)
+- **Aumento:** +20 testes (+30%)
 - **Cobertura de validação de entrada:** 0% → 100%
 - **Cobertura de boundary conditions:** 80% → 100%
 - **Cobertura de UI states (loading/error):** 0% → 100%
