@@ -1,0 +1,54 @@
+# Top-level EditorConfig — applies to ALL files in the repository.
+# Every modern editor (VS Code, Rider, Visual Studio) reads this automatically.
+root = true
+
+# ============================================================
+# All files: basic whitespace hygiene
+# ============================================================
+[*]
+indent_style = space
+indent_size = 4
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# ============================================================
+# C# (.cs) files — .NET conventions
+# ============================================================
+[*.cs]
+# .NET official style: 4-space indent, no tabs
+indent_size = 4
+# Prefer var when type is obvious, explicit type otherwise
+csharp_style_var_for_built_in_types = false:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+# Prefer expression-bodied members for simple one-liners
+csharp_style_expression_bodied_methods = true:silent
+csharp_style_expression_bodied_properties = true:silent
+
+# ============================================================
+# JSON / YAML / XML — use 2 spaces (common convention)
+# ============================================================
+[*.{json,yml,yaml,xml,csproj}]
+indent_size = 2
+
+# ============================================================
+# TypeScript / React (.tsx, .ts, .jsx, .js)
+# ============================================================
+[*.{ts,tsx,js,jsx}]
+indent_size = 2
+# Prefer single quotes in TS (JSX attributes still use double)
+quote_type = single
+
+# ============================================================
+# CSS
+# ============================================================
+[*.css]
+indent_size = 2
+
+# ============================================================
+# Markdown
+# ============================================================
+[*.md]
+# Don't trim trailing whitespace in markdown (2 spaces = line break)
+trim_trailing_whitespace = false
