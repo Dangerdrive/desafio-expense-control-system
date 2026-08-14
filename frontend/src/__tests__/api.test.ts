@@ -183,24 +183,24 @@ describe('getTotals', () => {
 // ============================================================
 
 describe('network error handling', () => {
-  it('getPeople should throw on network failure', async () => {
+  it('getPeople should throw friendly message on network failure', async () => {
     mockFetch.mockRejectedValueOnce(new Error('Failed to fetch'));
 
-    await expect(getPeople()).rejects.toThrow('Failed to fetch');
+    await expect(getPeople()).rejects.toThrow('Não foi possível conectar ao servidor');
   });
 
-  it('createTransaction should throw on network failure', async () => {
+  it('createTransaction should throw friendly message on network failure', async () => {
     mockFetch.mockRejectedValueOnce(new Error('Failed to fetch'));
 
     await expect(
       createTransaction({ description: 'A', amount: 10, type: 'despesa', personId: 1 })
-    ).rejects.toThrow('Failed to fetch');
+    ).rejects.toThrow('Não foi possível conectar ao servidor');
   });
 
-  it('getTotals should throw on network failure', async () => {
+  it('getTotals should throw friendly message on network failure', async () => {
     mockFetch.mockRejectedValueOnce(new Error('Network error'));
 
-    await expect(getTotals()).rejects.toThrow('Network error');
+    await expect(getTotals()).rejects.toThrow('Não foi possível conectar ao servidor');
   });
 });
 

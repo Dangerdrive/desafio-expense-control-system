@@ -32,7 +32,7 @@ public class Repository<T> : IRepository<T> where T : class
         return await _dbSet.FindAsync(id);
     }
 
-    public async Task<List<T>> GetAllAsync(params Expression<Func<T, object>>[] includes)
+    public async Task<List<T>> GetAllAsync(params Expression<Func<T, object?>>[] includes)
     {
         IQueryable<T> query = _dbSet;
 

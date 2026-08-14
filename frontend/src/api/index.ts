@@ -19,10 +19,18 @@ const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:5000/api';
  * Lança erro com a mensagem do backend em caso de falha.
  */
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE}${url}`, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE}${url}`, {
+      headers: { 'Content-Type': 'application/json' },
+      ...options,
+    });
+  } catch {
+    // Falha de rede (backend offline, CORS bloqueado, etc.).
+    // O fetch lança um TypeError genérico ("Failed to fetch"); aqui convertemos
+    // para uma mensagem amigável em PT-BR em vez de vazar o texto do browser.
+    throw new Error('Não foi possível conectar ao servidor. Verifique se o backend está em execução.');
+  }
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: 'Erro desconhecido' }));

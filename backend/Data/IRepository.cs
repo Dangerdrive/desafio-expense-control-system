@@ -25,8 +25,9 @@ public interface IRepository<T> where T : class
     /// <summary>
     /// Lista todas as entidades.
     /// O parâmetro opcional permite incluir navegações (ex: Transaction.Person).
+    /// Usa object? porque navegações são anuláveis (ex: Transaction.Person).
     /// </summary>
-    Task<List<T>> GetAllAsync(params Expression<Func<T, object>>[] includes);
+    Task<List<T>> GetAllAsync(params Expression<Func<T, object?>>[] includes);
 
     /// <summary>
     /// Adiciona uma nova entidade ao contexto.
