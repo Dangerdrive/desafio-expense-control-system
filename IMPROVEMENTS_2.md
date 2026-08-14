@@ -287,3 +287,28 @@ Want me to start with the bug fixes (#1, #2) and then tackle the backend hardeni
 - Backend: **57** (28 unit + 29 integração) · Frontend: **34** (14 API + 20 componentes) · Total: **91** · E2E: **5**.
 - Docs (`README.md`, `TESTING.md`, `IMPROVEMENTS.md`) atualizados para 91 + 5 E2E.
 - Restante (opcional, fora do escopo): campo data/filtro, editar/excluir transação, paginação, Docker Compose, autenticação, avisos `act(...)`.
+
+---
+
+# 🔄 Rodada 3 — Correções pós-CI + UX
+
+### Correção: mensagem amigável quando o backend está offline ✅ Concluído
+
+- [x] Usuário viu `Failed to fetch` ao abrir a aba Transações — causa: **backend não estava rodando** (`ERR_CONNECTION_REFUSED`).
+- [x] `frontend/src/api/index.ts` — o `fetch` agora converte falha de rede para **"Não foi possível conectar ao servidor. Verifique se o backend está em execução."** (em vez de vazar o `TypeError: Failed to fetch` do browser).
+- [x] Testes de rede (`api.test.ts`) atualizados para a nova mensagem — **34/34 frontend passando**.
+- [x] Backend **57/57** e build **0 warnings**.
+
+### Correção: warning CS8603 (nullable) no `GetAllAsync` ✅ Concluído
+
+- [x] `IRepository<T>.GetAllAsync` e `Repository<T>.GetAllAsync` usavam `Expression<Func<T, object>>[]`; navegação anulável (`t => t.Person`) gerava CS8603.
+- [x] Assinatura alterada para `Expression<Func<T, object?>>[]` (padrão EF Core) — build backend agora **0 warnings / 0 errors**.
+
+### #21 — CI: remover avisos de deprecação do Node 20 nas actions ✅ Concluído
+
+- [x] Primeiro run do CI ficou **verde** ✅, mas com 3 warnings: `actions/checkout@v4`, `actions/setup-node@v4` e `actions/setup-dotnet@v4` rodam em Node 20 (deprecado) e são forçados a Node 24.
+- [x] `.github/workflows/ci.yml` — ações atualizadas para as versões Node 24:
+  - `actions/checkout@v4` → `@v5`
+  - `actions/setup-node@v4` → `@v5`
+  - `actions/setup-dotnet@v4` → `@v5`
+- [x] Aviso pendente (opcional): `node-version: 20` instalado no CI — Node 20 está EOL (abril/2026); considerar Node 22 LTS no futuro (local ainda usa 20).
