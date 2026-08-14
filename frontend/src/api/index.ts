@@ -65,9 +65,21 @@ export function deletePerson(id: number): Promise<void> {
 
 // ===================== TRANSAÇÕES =====================
 
-/** Lista todas as transações. */
-export function getTransactions(): Promise<Transaction[]> {
-  return request<Transaction[]>('/transactions');
+/** Parâmetros de filtro/ordenação de transações. */
+export interface TransactionQuery {
+  from?: string; // data inicial "YYYY-MM-DD" (inclusiva)
+  to?: string;   // data final "YYYY-MM-DD" (inclusiva)
+  sort?: 'date_asc' | 'date_desc'; // ordenação por data (padrão: date_desc)
+}
+
+/** Lista transações, opcionalmente filtradas por período e ordenadas por data. */
+export function getTransactions(params?: TransactionQuery): Promise<Transaction[]> {
+  const query = new URLSearchParams();
+  if (params?.from) query.set('from', params.from);
+  if (params?.to) query.set('to', params.to);
+  if (params?.sort) query.set('sort', params.sort);
+  const qs = query.toString();
+  return request<Transaction[]>(`/transactions${qs ? `?${qs}` : ''}`);
 }
 
 /** Cria uma nova transação. Aplica regra: <18 anos só despesa. */

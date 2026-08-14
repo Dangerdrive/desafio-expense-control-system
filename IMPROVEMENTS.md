@@ -8,9 +8,9 @@
 
 | Área | Progresso | Status |
 |------|-----------|--------|
-| Testes unitários (backend) | 36/36 | ✅ Concluído |
-| Testes de integração (backend) | 33/33 | ✅ Concluído |
-| Testes API (frontend) | 14/14 | ✅ Concluído |
+| Testes unitários (backend) | 40/40 | ✅ Concluído |
+| Testes de integração (backend) | 36/36 | ✅ Concluído |
+| Testes API (frontend) | 16/16 | ✅ Concluído |
 | Testes componente (frontend) | 20/20 | ✅ Concluído |
 | Testes de contrato (frontend ↔ backend) | 4/4 | ✅ Concluído |
 | Repository Pattern | Implementado | ✅ Concluído |
@@ -20,6 +20,7 @@
 | Melhorias de frontend (UX) | 5/5 | ✅ Concluído |
 | Testes E2E | 5/5 | ✅ Concluído |
 | CI Pipeline (GitHub Actions) | Implementado | ✅ Concluído |
+| Campo Data em transações + filtro/ordenação | Implementado | ✅ Concluído |
 
 ---
 
@@ -36,10 +37,10 @@ Evoluir o MVP funcional para **qualidade de produção**: testado, robusto, docu
                     │         E2E (end-to-end)      │  ← ✅ 5 testes (Concluído)
                     │    Fluxo completo no browser   │     Playwright
                     ├──────────────────────────────┤
-                    │   INTEGRATION TESTS           │  ← ✅ 33 testes (Concluído)
+                    │   INTEGRATION TESTS           │  ← ✅ 36 testes (Concluído)
                     │   API controllers HTTP        │     WebApplicationFactory
                     ├──────────────────────────────┤
-                    │   UNIT TESTS                  │  ← ✅ 74 testes (Concluído)
+                    │   UNIT TESTS                  │  ← ✅ 80 testes (Concluído)
                     │   Services + API + Comps      │     xUnit + Vitest
                     └──────────────────────────────┘
                               ▲

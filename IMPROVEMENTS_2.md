@@ -345,3 +345,31 @@ Want me to start with the bug fixes (#1, #2) and then tackle the backend hardeni
 - Backend: **69** (36 unit + 33 integração) · Frontend: **38** (14 API + 20 componentes + 4 contrato) · Total: **107** · E2E: **5**.
 - Docs (`README.md`, `TESTING.md`, `IMPROVEMENTS.md`) atualizados para 107 + 5 E2E.
 - Restante (opcional, fora do escopo): campo data/filtro, editar/excluir transação, paginação, Docker Compose, autenticação.
+
+---
+
+# 🔄 Rodada 5 — Feature opcional: Data em transações + filtro/ordenação
+
+### #25 — Campo `date` + filtro por período + ordenação ✅ Concluído
+
+**Backend:**
+- [x] `Transaction.Date` (`DateOnly`) + migration `AddTransactionDate` (coluna TEXT NOT NULL).
+- [x] `CreateTransactionDto.Date` (`DateOnly?` + `[Required]`) — campo obrigatório; `TransactionResponseDto.Date`.
+- [x] `GET /api/transactions?from=YYYY-MM-DD&to=YYYY-MM-DD&sort=date_asc|date_desc` — filtro de período (inclusivo) e ordenação por data (padrão: mais recente primeiro).
+- [x] `TransactionService.GetAllAsync(from, to, sort)` aplica filtro + ordenação em memória (consistente com o escopo do projeto).
+- [x] Testes: 4 unit (preserva data, filtro por período, sort asc, ordem padrão) + 3 integração (400 sem data, filtro+sort via API, ordem padrão). Backend **76/76**.
+
+**Frontend:**
+- [x] `input type="date"` no formulário (padrão: hoje) — envia `date` no create.
+- [x] Coluna **Data** na tabela (formatada `DD/MM/YYYY` via `formatDate`).
+- [x] Barra de filtros: "De", "Até" (inputs de data) + seletor de ordenação ("Mais recentes/antigas primeiro").
+- [x] `api.getTransactions({ from, to, sort })` monta a query string.
+- [x] Testes: 2 novos na API layer (query string com/sem params) + contrato atualizado com `date`. Frontend **40/40**.
+- [x] Validado no navegador real: criar transação com data → coluna exibe `10/07/2026`; filtro "De=01/08" oculta a de julho; limpar filtro restaura.
+
+**Docs:** `API_REFERENCE.md` (campo `date`, query params, exemplos) e contagens de teste atualizadas.
+
+### Contagens atualizadas (fim da rodada 5)
+
+- Backend: **76** (40 unit + 36 integração) · Frontend: **40** (16 API + 20 componentes + 4 contrato) · Total: **116** · E2E: **5**.
+- Restante (opcional): editar/excluir transação, paginação, Docker Compose, autenticação.

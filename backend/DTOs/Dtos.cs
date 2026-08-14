@@ -44,6 +44,12 @@ public class CreateTransactionDto
     [Range(typeof(decimal), "0.01", "79228162514264337593543950335", ErrorMessage = "O valor deve ser maior que zero.")]
     public decimal Amount { get; set; }
 
+    /// <summary>
+    /// Data da transação (ex: "2026-08-14"). Obrigatória.
+    /// </summary>
+    [Required(ErrorMessage = "A data é obrigatória.")]
+    public DateOnly? Date { get; set; }
+
     [Required(ErrorMessage = "O tipo é obrigatório.")]
     [EnumDataType(typeof(TransactionType), ErrorMessage = "O tipo deve ser 'receita' ou 'despesa'.")]
     public TransactionType Type { get; set; }
@@ -60,6 +66,7 @@ public class TransactionResponseDto
     public int Id { get; set; }
     public string Description { get; set; } = string.Empty;
     public decimal Amount { get; set; }
+    public DateOnly Date { get; set; }
     public TransactionType Type { get; set; }
     public int PersonId { get; set; }
     public string PersonName { get; set; } = string.Empty;

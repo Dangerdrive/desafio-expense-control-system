@@ -21,6 +21,7 @@ export interface Transaction {
   id: number;
   description: string;
   amount: number;
+  date: string; // formato ISO "YYYY-MM-DD"
   type: 'receita' | 'despesa';
   personId: number;
   personName: string;
@@ -30,6 +31,7 @@ export interface Transaction {
 export interface CreateTransactionDto {
   description: string;
   amount: number;
+  date: string; // formato ISO "YYYY-MM-DD"
   type: 'receita' | 'despesa';
   personId: number;
 }

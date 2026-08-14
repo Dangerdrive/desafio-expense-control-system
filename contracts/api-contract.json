@@ -9,6 +9,7 @@
     "id": 1,
     "description": "Salário",
     "amount": 5000,
+    "date": "2026-01-15",
     "type": "receita",
     "personId": 1,
     "personName": "Ana"

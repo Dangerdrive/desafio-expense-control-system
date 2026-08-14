@@ -29,6 +29,12 @@ public class Transaction
     public decimal Amount { get; set; }
 
     /// <summary>
+    /// Data da transação (apenas a data, sem hora).
+    /// </summary>
+    [Required(ErrorMessage = "A data é obrigatória.")]
+    public DateOnly Date { get; set; }
+
+    /// <summary>
     /// Tipo da transação: receita (entrada de dinheiro) ou despesa (saída de dinheiro).
     /// </summary>
     [Required(ErrorMessage = "O tipo é obrigatório.")]

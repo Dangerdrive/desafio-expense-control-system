@@ -63,6 +63,7 @@ public class TransactionService
         {
             Description = dto.Description,
             Amount = dto.Amount,
+            Date = dto.Date!.Value,
             Type = dto.Type,
             PersonId = dto.PersonId
         };
@@ -75,6 +76,7 @@ public class TransactionService
             Id = transaction.Id,
             Description = transaction.Description,
             Amount = transaction.Amount,
+            Date = transaction.Date,
             Type = transaction.Type,
             PersonId = transaction.PersonId,
             PersonName = personInfo.Value.Name
@@ -82,22 +84,39 @@ public class TransactionService
     }
 
     /// <summary>
-    /// Lista todas as transações cadastradas, ordenadas por ID decrescente
-    /// (mais recentes primeiro), incluindo o nome da pessoa associada.
+    /// Lista transações cadastradas, incluindo o nome da pessoa associada.
+    ///
+    /// Suporta filtros opcionais por período (from/to) e ordenação por data
+    /// (sort = "date_asc" | "date_desc"; padrão: mais recente primeiro).
     /// </summary>
-    public async Task<List<TransactionResponseDto>> GetAllAsync()
+    /// <param name="from">Data inicial do filtro (inclusiva), opcional.</param>
+    /// <param name="to">Data final do filtro (inclusiva), opcional.</param>
+    /// <param name="sort">Ordem: "date_asc" ou "date_desc" (padrão).</param>
+    public async Task<List<TransactionResponseDto>> GetAllAsync(DateOnly? from = null, DateOnly? to = null, string? sort = null)
     {
         // Inclui a navegação Person para popular o PersonName na resposta.
         var transactions = await _repository.GetAllAsync(t => t.Person);
 
-        // Ordenação da mais recente para a mais antiga.
-        return transactions
-            .OrderByDescending(t => t.Id)
+        // Filtro por período (inclusivo)
+        IEnumerable<Transaction> query = transactions;
+        if (from.HasValue)
+            query = query.Where(t => t.Date >= from.Value);
+        if (to.HasValue)
+            query = query.Where(t => t.Date <= to.Value);
+
+        // Ordenação por data (padrão: mais recente primeiro)
+        var ascending = string.Equals(sort, "date_asc", StringComparison.OrdinalIgnoreCase);
+        query = ascending
+            ? query.OrderBy(t => t.Date).ThenBy(t => t.Id)
+            : query.OrderByDescending(t => t.Date).ThenByDescending(t => t.Id);
+
+        return query
             .Select(t => new TransactionResponseDto
             {
                 Id = t.Id,
                 Description = t.Description,
                 Amount = t.Amount,
+                Date = t.Date,
                 Type = t.Type,
                 PersonId = t.PersonId,
                 PersonName = t.Person?.Name ?? "Desconhecida"
@@ -122,6 +141,7 @@ public class TransactionService
             Id = transaction.Id,
             Description = transaction.Description,
             Amount = transaction.Amount,
+            Date = transaction.Date,
             Type = transaction.Type,
             PersonId = transaction.PersonId,
             PersonName = personInfo?.Name ?? "Desconhecida"

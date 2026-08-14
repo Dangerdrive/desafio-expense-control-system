@@ -179,3 +179,18 @@ body {
 }
 .error-boundary h2 { margin-bottom: 12px; color: #16213e; }
 .error-boundary p { color: #64748b; margin-bottom: 20px; }
+
+/* ==========================================
+   Filtros de transações (período + ordenação)
+   ========================================== */
+
+.filter-bar {
+  display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+  background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+  padding: 10px 12px; margin: 12px 0 16px;
+}
+
+.filter-bar label {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.85rem; color: #475569;
+}

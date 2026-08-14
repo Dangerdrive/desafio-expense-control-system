@@ -1,6 +1,6 @@
 # 🧪 Documentação de Testes — Expense Control System
 
-> **Status:** ✅ Suite completa com **107 testes** (69 backend + 38 frontend) + **5 E2E (Playwright)**, todos passando.
+> **Status:** ✅ Suite completa com **116 testes** (76 backend + 40 frontend) + **5 E2E (Playwright)**, todos passando.
 
 ---
 
@@ -8,12 +8,12 @@
 
 | Camada | Framework | Tipo | Quantidade | Status |
 |--------|-----------|------|-----------|--------|
-| Backend — Unit | xUnit + EF Core InMemory | Serviços + Middleware + Repository | 36 | ✅ 36/36 |
-| Backend — Integration | xUnit + WebApplicationFactory | Controllers HTTP + Contrato | 33 | ✅ 33/33 |
-| Frontend — Unit | Vitest + mock fetch | API layer | 14 | ✅ 14/14 |
+| Backend — Unit | xUnit + EF Core InMemory | Serviços + Middleware + Repository | 40 | ✅ 40/40 |
+| Backend — Integration | xUnit + WebApplicationFactory | Controllers HTTP + Contrato | 36 | ✅ 36/36 |
+| Frontend — Unit | Vitest + mock fetch | API layer | 16 | ✅ 16/16 |
 | Frontend — Component | Vitest + Testing Library | React components | 20 | ✅ 20/20 |
 | Frontend — Contrato | Vitest (contracts/api-contract.json) | Schema da API | 4 | ✅ 4/4 |
-| **TOTAL** | | | **107** | **✅ 107/107** |
+| **TOTAL** | | | **116** | **✅ 116/116** |
 | E2E — Playwright | Playwright + Chromium | Fluxos completos (UI + API) | 5 | ✅ 5/5 |
 
 ---
@@ -211,11 +211,11 @@ npx vitest run --reporter=verbose    # Output detalhado
 │                    │(Playwright)│    Playwright       │
 │                   ─┴──────────┴─                     │
 │                 ┌────────────────┐                   │
-│                 │  Integration   │  ← 33 tests       │
+│                 │  Integration   │  ← 36 tests       │
 │                 │  (Controllers) │     WebAppFactory │
 │                ─┴────────────────┴─                  │
 │          ┌─────────────────────────────┐             │
-│          │       Unit Tests            │  ← 74 tests │
+│          │       Unit Tests            │  ← 80 tests │
 │          │  (Services + API + Comps)   │             │
 │          └─────────────────────────────┘             │
 │                                                      │
@@ -338,8 +338,8 @@ Auditoria de qualidade realizada para identificar gaps e melhorias.
 
 - **Antes (da auditoria):** 66 testes (43 backend + 23 frontend)
 - **Depois (da auditoria):** 86 testes (52 backend + 34 frontend)
-- **Atualmente:** 107 testes (69 backend + 38 frontend) + 5 E2E (Playwright)
-- **Aumento (desde a auditoria):** +41 testes (+62%) na suite unitária/integração, +5 E2E
+- **Atualmente:** 116 testes (76 backend + 40 frontend) + 5 E2E (Playwright)
+- **Aumento (desde a auditoria):** +50 testes (+76%) na suite unitária/integração, +5 E2E
 - **Cobertura de validação de entrada:** 0% → 100%
 - **Cobertura de boundary conditions:** 80% → 100%
 - **Cobertura de UI states (loading/error):** 0% → 100%

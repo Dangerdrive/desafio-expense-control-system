@@ -44,12 +44,18 @@ public class TransactionsController : ControllerBase
     }
 
     /// <summary>
-    /// Lista todas as transações cadastradas, ordenadas da mais recente para a mais antiga.
+    /// Lista transações cadastradas, com filtros opcionais:
+    /// - from/to: período (inclusivo) pelo campo Date.
+    /// - sort: "date_asc" (crescente) ou "date_desc" (padrão, mais recente primeiro).
     /// </summary>
+    /// <example>GET /api/transactions?from=2026-01-01&to=2026-12-31&sort=date_asc</example>
     [HttpGet]
-    public async Task<ActionResult<List<TransactionResponseDto>>> GetAll()
+    public async Task<ActionResult<List<TransactionResponseDto>>> GetAll(
+        [FromQuery] DateOnly? from = null,
+        [FromQuery] DateOnly? to = null,
+        [FromQuery] string? sort = null)
     {
-        var transactions = await _service.GetAllAsync();
+        var transactions = await _service.GetAllAsync(from, to, sort);
         return Ok(transactions);
     }
 

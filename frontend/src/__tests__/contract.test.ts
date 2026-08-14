@@ -46,6 +46,7 @@ describe('Contrato da API (frontend ↔ backend)', () => {
   it('transaction: os campos do contrato batem com os tipos TS', () => {
     expect(Object.keys(transactionFixture).sort()).toEqual([
       'amount',
+      'date',
       'description',
       'id',
       'personId',
@@ -53,6 +54,8 @@ describe('Contrato da API (frontend ↔ backend)', () => {
       'type',
     ]);
     expect(typeof transactionFixture.amount).toBe('number');
+    expect(typeof transactionFixture.date).toBe('string');
+    expect(transactionFixture.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(typeof transactionFixture.type).toBe('string');
     expect(transactionFixture.type).toMatch(/^(receita|despesa)$/);
     expect(typeof transactionFixture.personName).toBe('string');

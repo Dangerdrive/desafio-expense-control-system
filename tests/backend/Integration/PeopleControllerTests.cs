@@ -112,7 +112,7 @@ public class PeopleControllerTests : IClassFixture<TestWebApplicationFactory>
 
         await _client.PostAsJsonAsync("/api/transactions", new
         {
-            description = "Salário", amount = 5000, type = "receita", personId = person!.Id
+            description = "Salário", amount = 5000, date = "2026-01-15", type = "receita", personId = person!.Id
         });
 
         // Act — deleta a pessoa

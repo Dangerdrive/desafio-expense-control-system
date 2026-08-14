@@ -196,6 +196,7 @@ Content-Type: application/json
 {
   "description": "Salário",
   "amount": 5000.00,
+  "date": "2026-07-10",
   "type": "receita",
   "personId": 1
 }
@@ -205,6 +206,7 @@ Content-Type: application/json
 |-------|------|-------------|-----------|
 | `description` | `string` | ✅ Sim | 1–200 caracteres |
 | `amount` | `decimal` | ✅ Sim | > 0 |
+| `date` | `string` (ISO `YYYY-MM-DD`) | ✅ Sim | Data da transação |
 | `type` | `string` | ✅ Sim | `"receita"` ou `"despesa"` |
 | `personId` | `int` | ✅ Sim | Deve corresponder a uma pessoa existente |
 
@@ -215,6 +217,7 @@ Content-Type: application/json
   "id": 1,
   "description": "Salário",
   "amount": 5000.00,
+  "date": "2026-07-10",
   "type": "receita",
   "personId": 1,
   "personName": "João Silva"
@@ -241,28 +244,38 @@ Content-Type: application/json
 # ✅ Adulto criando receita (permitido)
 curl -X POST http://localhost:5000/api/transactions \
   -H "Content-Type: application/json" \
-  -d '{"description":"Salário","amount":5000,"type":"receita","personId":1}'
+  -d '{"description":"Salário","amount":5000,"date":"2026-07-10","type":"receita","personId":1}'
 
 # ✅ Menor criando despesa (permitido)
 curl -X POST http://localhost:5000/api/transactions \
   -H "Content-Type: application/json" \
-  -d '{"description":"Lanche","amount":25.50,"type":"despesa","personId":3}'
+  -d '{"description":"Lanche","amount":25.50,"date":"2026-07-10","type":"despesa","personId":3}'
 
 # ❌ Menor criando receita (BLOQUEADO)
 curl -X POST http://localhost:5000/api/transactions \
   -H "Content-Type: application/json" \
-  -d '{"description":"Mesada","amount":100,"type":"receita","personId":3}'
+  -d '{"description":"Mesada","amount":100,"date":"2026-07-10","type":"receita","personId":3}'
 ```
 
 ---
 
 ### Listar transações
 
-Retorna todas as transações cadastradas, ordenadas da mais recente para a mais antiga (ID decrescente).
+Retorna as transações cadastradas, **ordenadas por data** (mais recentes primeiro por padrão). Suporta filtros opcionais por período (`from`/`to`) e ordenação (`sort`).
 
 ```http
 GET /api/transactions
 ```
+
+**Query params (todos opcionais):**
+
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `from` | `date` (ISO `YYYY-MM-DD`) | Data inicial do filtro (inclusiva) |
+| `to` | `date` (ISO `YYYY-MM-DD`) | Data final do filtro (inclusiva) |
+| `sort` | `string` | `"date_asc"` (crescente) ou `"date_desc"` (padrão) |
+
+**Exemplo:** `GET /api/transactions?from=2026-01-01&to=2026-12-31&sort=date_asc`
 
 **Response `200 OK`:**
 
@@ -272,6 +285,7 @@ GET /api/transactions
     "id": 3,
     "description": "Lanche",
     "amount": 25.50,
+    "date": "2026-07-10",
     "type": "despesa",
     "personId": 3,
     "personName": "Pedro Santos"
@@ -280,6 +294,7 @@ GET /api/transactions
     "id": 2,
     "description": "Aluguel",
     "amount": 1500.00,
+    "date": "2026-06-05",
     "type": "despesa",
     "personId": 1,
     "personName": "João Silva"
@@ -288,6 +303,7 @@ GET /api/transactions
     "id": 1,
     "description": "Salário",
     "amount": 5000.00,
+    "date": "2026-01-15",
     "type": "receita",
     "personId": 1,
     "personName": "João Silva"
@@ -298,7 +314,11 @@ GET /api/transactions
 **Exemplo curl:**
 
 ```bash
+# Todas as transações (mais recentes primeiro)
 curl http://localhost:5000/api/transactions
+
+# Filtradas por período e ordenadas de forma crescente
+curl "http://localhost:5000/api/transactions?from=2026-01-01&to=2026-12-31&sort=date_asc"
 ```
 
 ---
@@ -322,6 +342,7 @@ GET /api/transactions/{id}
   "id": 1,
   "description": "Salário",
   "amount": 5000.00,
+  "date": "2026-01-15",
   "type": "receita",
   "personId": 1,
   "personName": "João Silva"

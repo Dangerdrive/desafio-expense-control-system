@@ -107,13 +107,34 @@ describe('deletePerson', () => {
 describe('getTransactions', () => {
   it('should return transactions with person names', async () => {
     const mockData = [
-      { id: 1, description: 'Salário', amount: 5000, type: 'receita', personId: 1, personName: 'João' },
+      { id: 1, description: 'Salário', amount: 5000, date: '2026-01-15', type: 'receita', personId: 1, personName: 'João' },
     ];
     mockFetch.mockResolvedValueOnce(mockResponse(200, mockData));
 
     const result = await getTransactions();
 
     expect(result).toEqual(mockData);
+  });
+
+  it('should send from/to/sort query params when provided', async () => {
+    mockFetch.mockResolvedValueOnce(mockResponse(200, []));
+
+    await getTransactions({ from: '2026-01-01', to: '2026-12-31', sort: 'date_asc' });
+
+    const url = mockFetch.mock.calls[0][0] as string;
+    expect(url).toContain('/api/transactions?');
+    expect(url).toContain('from=2026-01-01');
+    expect(url).toContain('to=2026-12-31');
+    expect(url).toContain('sort=date_asc');
+  });
+
+  it('should not append query string when no params', async () => {
+    mockFetch.mockResolvedValueOnce(mockResponse(200, []));
+
+    await getTransactions();
+
+    const url = mockFetch.mock.calls[0][0] as string;
+    expect(url).toBe('http://localhost:5000/api/transactions');
   });
 });
 
@@ -123,7 +144,7 @@ describe('getTransactions', () => {
 
 describe('createTransaction', () => {
   it('should create transaction for adult', async () => {
-    const dto = { description: 'Salário', amount: 5000, type: 'receita' as const, personId: 1 };
+    const dto = { description: 'Salário', amount: 5000, date: '2026-01-15', type: 'receita' as const, personId: 1 };
     const mockResponseData = { id: 1, ...dto, personName: 'João' };
     mockFetch.mockResolvedValueOnce(mockResponse(201, mockResponseData));
 
@@ -133,7 +154,7 @@ describe('createTransaction', () => {
   });
 
   it('should throw when business rule is violated (minor + income)', async () => {
-    const dto = { description: 'Mesada', amount: 100, type: 'receita' as const, personId: 2 };
+    const dto = { description: 'Mesada', amount: 100, date: '2026-01-15', type: 'receita' as const, personId: 2 };
     mockFetch.mockResolvedValueOnce(
       mockResponse(400, { message: 'Menores de 18 anos não podem cadastrar receitas, apenas despesas.' }),
     );
@@ -193,7 +214,7 @@ describe('network error handling', () => {
     mockFetch.mockRejectedValueOnce(new Error('Failed to fetch'));
 
     await expect(
-      createTransaction({ description: 'A', amount: 10, type: 'despesa', personId: 1 })
+      createTransaction({ description: 'A', amount: 10, date: '2026-01-15', type: 'despesa', personId: 1 })
     ).rejects.toThrow('Não foi possível conectar ao servidor');
   });
 

@@ -7,6 +7,13 @@ export function formatCurrency(value: number): string {
   return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
+/** Converte "YYYY-MM-DD" (ISO) para "DD/MM/YYYY" (exibição pt-BR). */
+export function formatDate(isoDate: string): string {
+  const [year, month, day] = isoDate.split('-');
+  if (!year || !month || !day) return isoDate;
+  return `${day}/${month}/${year}`;
+}
+
 /**
  * Máscara para campo de valor monetário.
  * Aceita apenas dígitos e UM separador decimal (`.` ou `,`), com no máximo

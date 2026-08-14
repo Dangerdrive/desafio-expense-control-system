@@ -50,6 +50,7 @@ public class ContractTests : IClassFixture<TestWebApplicationFactory>
         {
             description = "Salário",
             amount = 5000,
+            date = "2026-01-15",
             type = "receita",
             personId
         });
@@ -70,6 +71,7 @@ public class ContractTests : IClassFixture<TestWebApplicationFactory>
         {
             description = "Salário",
             amount = 5000,
+            date = "2026-01-15",
             type = "receita",
             personId
         });

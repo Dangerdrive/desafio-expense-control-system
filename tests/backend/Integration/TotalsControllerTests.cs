@@ -44,12 +44,12 @@ public class TotalsControllerTests : IClassFixture<TestWebApplicationFactory>
         var maria = await mariaResponse.Content.ReadFromJsonAsync<PersonResponseDto>();
 
         // Transações do João: +5000 receita, -2000 despesa = +3000
-        await _client.PostAsJsonAsync("/api/transactions", new { description = "Salário", amount = 5000, type = "receita", personId = joao!.Id });
-        await _client.PostAsJsonAsync("/api/transactions", new { description = "Aluguel", amount = 2000, type = "despesa", personId = joao.Id });
+        await _client.PostAsJsonAsync("/api/transactions", new { description = "Salário", amount = 5000, date = "2026-01-15", type = "receita", personId = joao!.Id });
+        await _client.PostAsJsonAsync("/api/transactions", new { description = "Aluguel", amount = 2000, date = "2026-01-16", type = "despesa", personId = joao.Id });
 
         // Transações da Maria: +3000 receita, -1000 despesa = +2000
-        await _client.PostAsJsonAsync("/api/transactions", new { description = "Salário", amount = 3000, type = "receita", personId = maria!.Id });
-        await _client.PostAsJsonAsync("/api/transactions", new { description = "Conta", amount = 1000, type = "despesa", personId = maria.Id });
+        await _client.PostAsJsonAsync("/api/transactions", new { description = "Salário", amount = 3000, date = "2026-01-15", type = "receita", personId = maria!.Id });
+        await _client.PostAsJsonAsync("/api/transactions", new { description = "Conta", amount = 1000, date = "2026-01-16", type = "despesa", personId = maria.Id });
 
         // Act
         var response = await _client.GetAsync("/api/totals");

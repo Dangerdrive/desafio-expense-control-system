@@ -33,7 +33,7 @@ public class TransactionsControllerTests : IClassFixture<TestWebApplicationFacto
     {
         // Arrange
         var personId = await CreatePersonAsync("Adulto", 30);
-        var dto = new { description = "Salário", amount = 5000, type = "receita", personId };
+        var dto = new { description = "Salário", amount = 5000, date = "2026-01-15", type = "receita", personId };
 
         // Act
         var response = await _client.PostAsJsonAsync("/api/transactions", dto);
@@ -47,7 +47,7 @@ public class TransactionsControllerTests : IClassFixture<TestWebApplicationFacto
     {
         // Arrange — menor de idade tentando cadastrar receita
         var personId = await CreatePersonAsync("Menor", 15);
-        var dto = new { description = "Mesada", amount = 100, type = "receita", personId };
+        var dto = new { description = "Mesada", amount = 100, date = "2026-01-15", type = "receita", personId };
 
         // Act
         var response = await _client.PostAsJsonAsync("/api/transactions", dto);
@@ -64,7 +64,7 @@ public class TransactionsControllerTests : IClassFixture<TestWebApplicationFacto
     {
         // Arrange — menor cadastrando despesa (permitido)
         var personId = await CreatePersonAsync("Menor", 15);
-        var dto = new { description = "Lanche", amount = 25.50, type = "despesa", personId };
+        var dto = new { description = "Lanche", amount = 25.50, date = "2026-01-15", type = "despesa", personId };
 
         // Act
         var response = await _client.PostAsJsonAsync("/api/transactions", dto);
@@ -77,7 +77,7 @@ public class TransactionsControllerTests : IClassFixture<TestWebApplicationFacto
     public async Task Post_WithNonExistingPerson_ShouldReturn400()
     {
         // Arrange
-        var dto = new { description = "Teste", amount = 100, type = "despesa", personId = 99999 };
+        var dto = new { description = "Teste", amount = 100, date = "2026-01-15", type = "despesa", personId = 99999 };
 
         // Act
         var response = await _client.PostAsJsonAsync("/api/transactions", dto);
@@ -93,7 +93,7 @@ public class TransactionsControllerTests : IClassFixture<TestWebApplicationFacto
         var personId = await CreatePersonAsync("Teste", 30);
         await _client.PostAsJsonAsync("/api/transactions", new
         {
-            description = "T1", amount = 100, type = "receita", personId
+            description = "T1", amount = 100, date = "2026-01-15", type = "receita", personId
         });
 
         // Act
@@ -113,7 +113,7 @@ public class TransactionsControllerTests : IClassFixture<TestWebApplicationFacto
         var personId = await CreatePersonAsync("Busca Tx", 30);
         var createResponse = await _client.PostAsJsonAsync("/api/transactions", new
         {
-            description = "Busca", amount = 100, type = "receita", personId
+            description = "Busca", amount = 100, date = "2026-01-15", type = "receita", personId
         });
         var created = await createResponse.Content.ReadFromJsonAsync<TransactionResponseDto>();
 
@@ -142,7 +142,7 @@ public class TransactionsControllerTests : IClassFixture<TestWebApplicationFacto
     {
         // Arrange
         var personId = await CreatePersonAsync("Adulto", 25);
-        var dto = new { description = "Conta de luz", amount = 200, type = "despesa", personId };
+        var dto = new { description = "Conta de luz", amount = 200, date = "2026-01-15", type = "despesa", personId };
 
         // Act
         var response = await _client.PostAsJsonAsync("/api/transactions", dto);
@@ -160,7 +160,7 @@ public class TransactionsControllerTests : IClassFixture<TestWebApplicationFacto
     {
         // Arrange
         var personId = await CreatePersonAsync("João Teste", 30);
-        var dto = new { description = "Salário", amount = 5000, type = "receita", personId };
+        var dto = new { description = "Salário", amount = 5000, date = "2026-01-15", type = "receita", personId };
 
         // Act
         var response = await _client.PostAsJsonAsync("/api/transactions", dto);
@@ -181,6 +181,7 @@ public class TransactionsControllerTests : IClassFixture<TestWebApplicationFacto
         {
             description,
             amount = 150,
+            date = "2026-01-15",
             type = "receita",
             personId
         });
@@ -203,7 +204,7 @@ public class TransactionsControllerTests : IClassFixture<TestWebApplicationFacto
     {
         // Arrange
         var personId = await CreatePersonAsync("Adulto", 30);
-        var dto = new { description = "Teste", amount = 0, type = "despesa", personId };
+        var dto = new { description = "Teste", amount = 0, date = "2026-01-15", type = "despesa", personId };
 
         // Act
         var response = await _client.PostAsJsonAsync("/api/transactions", dto);
@@ -217,7 +218,7 @@ public class TransactionsControllerTests : IClassFixture<TestWebApplicationFacto
     {
         // Arrange
         var personId = await CreatePersonAsync("Adulto", 30);
-        var dto = new { description = "Teste", amount = 100, type = "investimento", personId };
+        var dto = new { description = "Teste", amount = 100, date = "2026-01-15", type = "investimento", personId };
 
         // Act
         var response = await _client.PostAsJsonAsync("/api/transactions", dto);
@@ -235,7 +236,7 @@ public class TransactionsControllerTests : IClassFixture<TestWebApplicationFacto
     {
         // Arrange
         var personId = await CreatePersonAsync("Adulto", 30);
-        var dto = new { description = "", amount = 100, type = "despesa", personId };
+        var dto = new { description = "", amount = 100, date = "2026-01-15", type = "despesa", personId };
 
         // Act
         var response = await _client.PostAsJsonAsync("/api/transactions", dto);
@@ -249,12 +250,72 @@ public class TransactionsControllerTests : IClassFixture<TestWebApplicationFacto
     {
         // Arrange — descrição com 201 caracteres (max = 200)
         var personId = await CreatePersonAsync("Adulto", 30);
-        var dto = new { description = new string('A', 201), amount = 100, type = "despesa", personId };
+        var dto = new { description = new string('A', 201), amount = 100, date = "2026-01-15", type = "despesa", personId };
 
         // Act
         var response = await _client.PostAsJsonAsync("/api/transactions", dto);
 
         // Assert
         Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    // ============================================================
+    // DATA — filtro por período + ordenação + validação de campo
+    // ============================================================
+
+    [Fact]
+    public async Task Post_WithMissingDate_ShouldReturn400()
+    {
+        // Arrange — payload SEM o campo date (agora obrigatório)
+        var personId = await CreatePersonAsync("Adulto", 30);
+        var dto = new { description = "Teste", amount = 100, type = "despesa", personId };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/transactions", dto);
+
+        // Assert
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Get_WithDateFilterAndSort_ShouldFilterAndSort()
+    {
+        // Arrange — três transações em datas diferentes
+        var personId = await CreatePersonAsync("Adulto", 30);
+        await _client.PostAsJsonAsync("/api/transactions", new { description = "Jan", amount = 100, date = "2026-01-10", type = "despesa", personId });
+        await _client.PostAsJsonAsync("/api/transactions", new { description = "Jun", amount = 200, date = "2026-06-15", type = "despesa", personId });
+        await _client.PostAsJsonAsync("/api/transactions", new { description = "Dez", amount = 300, date = "2026-12-20", type = "despesa", personId });
+
+        // Act — filtro de março a novembro (inclusivo) + ordenação crescente
+        var response = await _client.GetAsync("/api/transactions?from=2026-03-01&to=2026-11-30&sort=date_asc");
+        var transactions = await response.Content.ReadFromJsonAsync<List<TransactionResponseDto>>();
+
+        // Assert — apenas a transação de junho, com a data correta
+        var tx = Assert.Single(transactions!);
+        Assert.Equal("Jun", tx.Description);
+        Assert.Equal(new DateOnly(2026, 6, 15), tx.Date);
+    }
+
+    [Fact]
+    public async Task Get_DefaultOrder_ShouldBeMostRecentDateFirst()
+    {
+        // Arrange — descrições únicas para isolar das demais transações da classe
+        // (a classe compartilha o mesmo banco InMemory via IClassFixture)
+        var personId = await CreatePersonAsync("Adulto", 30);
+        var older = $"Older_{Guid.NewGuid():N}";
+        var recent = $"Recent_{Guid.NewGuid():N}";
+        await _client.PostAsJsonAsync("/api/transactions", new { description = older, amount = 100, date = "2026-01-10", type = "despesa", personId });
+        await _client.PostAsJsonAsync("/api/transactions", new { description = recent, amount = 300, date = "2026-12-20", type = "despesa", personId });
+
+        // Act — sem parâmetros (padrão: mais recente primeiro)
+        var response = await _client.GetAsync("/api/transactions");
+        var transactions = await response.Content.ReadFromJsonAsync<List<TransactionResponseDto>>();
+
+        // Assert — a mais recente (dezembro) deve vir antes da mais antiga (janeiro)
+        var recentIndex = transactions!.FindIndex(t => t.Description == recent);
+        var olderIndex = transactions.FindIndex(t => t.Description == older);
+        Assert.True(recentIndex >= 0, "A transação mais recente deve existir na resposta.");
+        Assert.True(olderIndex >= 0, "A transação mais antiga deve existir na resposta.");
+        Assert.True(recentIndex < olderIndex, "A transação mais recente deve vir antes da mais antiga.");
     }
 }

@@ -61,6 +61,7 @@ public class TransactionServiceTests
         {
             Description = "Salário",
             Amount = 5000m,
+            Date = new DateOnly(2026, 1, 15),
             Type = TransactionType.Receita,
             PersonId = personId
         };
@@ -84,6 +85,7 @@ public class TransactionServiceTests
         {
             Description = "Aluguel",
             Amount = 1500m,
+            Date = new DateOnly(2026, 1, 15),
             Type = TransactionType.Despesa,
             PersonId = personId
         };
@@ -108,6 +110,7 @@ public class TransactionServiceTests
         {
             Description = "Mesada",
             Amount = 100m,
+            Date = new DateOnly(2026, 1, 15),
             Type = TransactionType.Receita,
             PersonId = personId
         };
@@ -126,6 +129,7 @@ public class TransactionServiceTests
         {
             Description = "Lanche",
             Amount = 25.50m,
+            Date = new DateOnly(2026, 1, 15),
             Type = TransactionType.Despesa,
             PersonId = personId
         };
@@ -154,7 +158,7 @@ public class TransactionServiceTests
         var service = new TransactionService(transactionRepo, personService);
         var dto = new CreateTransactionDto
         {
-            Description = "Freela", Amount = 200m, Type = TransactionType.Receita, PersonId = person.Id
+            Description = "Freela", Amount = 200m, Date = new DateOnly(2026, 1, 15), Type = TransactionType.Receita, PersonId = person.Id
         };
 
         // Act & Assert — 17 anos ainda é barrado
@@ -178,7 +182,7 @@ public class TransactionServiceTests
         var service = new TransactionService(transactionRepo, personService);
         var dto = new CreateTransactionDto
         {
-            Description = "Salário", Amount = 2000m, Type = TransactionType.Receita, PersonId = person.Id
+            Description = "Salário", Amount = 2000m, Date = new DateOnly(2026, 1, 15), Type = TransactionType.Receita, PersonId = person.Id
         };
 
         // Act — 18 anos deve ser permitido
@@ -202,7 +206,7 @@ public class TransactionServiceTests
         var service = new TransactionService(new Repository<Transaction>(context), personService);
         var dto = new CreateTransactionDto
         {
-            Description = "Teste", Amount = 100m, Type = TransactionType.Despesa, PersonId = 999
+            Description = "Teste", Amount = 100m, Date = new DateOnly(2026, 1, 15), Type = TransactionType.Despesa, PersonId = 999
         };
 
         // Act & Assert
@@ -266,7 +270,7 @@ public class TransactionServiceTests
         var (service, personId) = await SetupAdultAsync();
         var dto = new CreateTransactionDto
         {
-            Description = "Apartamento", Amount = 999_999_999.99m, Type = TransactionType.Despesa, PersonId = personId
+            Description = "Apartamento", Amount = 999_999_999.99m, Date = new DateOnly(2026, 1, 15), Type = TransactionType.Despesa, PersonId = personId
         };
 
         // Act
@@ -283,7 +287,7 @@ public class TransactionServiceTests
         var (service, personId) = await SetupAdultAsync();
         var dto = new CreateTransactionDto
         {
-            Description = "Café", Amount = 4.75m, Type = TransactionType.Despesa, PersonId = personId
+            Description = "Café", Amount = 4.75m, Date = new DateOnly(2026, 1, 15), Type = TransactionType.Despesa, PersonId = personId
         };
 
         // Act
@@ -291,5 +295,108 @@ public class TransactionServiceTests
 
         // Assert — centavos devem ser preservados
         Assert.Equal(4.75m, result.Amount);
+    }
+
+    // ============================================================
+    // DATA (campo Date + filtros + ordenação)
+    // ============================================================
+
+    [Fact]
+    public async Task CreateAsync_ShouldPreserveDate()
+    {
+        // Arrange
+        var (service, personId) = await SetupAdultAsync();
+        var date = new DateOnly(2026, 7, 20);
+        var dto = new CreateTransactionDto
+        {
+            Description = "Bônus", Amount = 300m, Date = date, Type = TransactionType.Receita, PersonId = personId
+        };
+
+        // Act
+        var result = await service.CreateAsync(dto);
+
+        // Assert
+        Assert.Equal(date, result.Date);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WithDateRange_ShouldFilterByPeriod()
+    {
+        // Arrange — transações em 3 datas diferentes
+        var context = TestDatabase.CreateContext();
+        var personRepo = new Repository<Person>(context);
+        var transactionRepo = new Repository<Transaction>(context);
+        var personService = new PersonService(personRepo);
+
+        var person = new Person { Name = "Adulto", Age = 30 };
+        await personRepo.AddAsync(person);
+        await personRepo.SaveChangesAsync();
+
+        await transactionRepo.AddAsync(new Transaction { Description = "Jan", Amount = 100, Date = new DateOnly(2026, 1, 10), Type = TransactionType.Despesa, PersonId = person.Id });
+        await transactionRepo.AddAsync(new Transaction { Description = "Jun", Amount = 200, Date = new DateOnly(2026, 6, 15), Type = TransactionType.Despesa, PersonId = person.Id });
+        await transactionRepo.AddAsync(new Transaction { Description = "Dez", Amount = 300, Date = new DateOnly(2026, 12, 20), Type = TransactionType.Despesa, PersonId = person.Id });
+        await transactionRepo.SaveChangesAsync();
+
+        var service = new TransactionService(transactionRepo, personService);
+
+        // Act — filtra de março a novembro (inclusivo)
+        var result = await service.GetAllAsync(new DateOnly(2026, 3, 1), new DateOnly(2026, 11, 30));
+
+        // Assert — apenas a transação de junho
+        var tx = Assert.Single(result);
+        Assert.Equal("Jun", tx.Description);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WithSortAscending_ShouldOrderByDateAsc()
+    {
+        // Arrange
+        var context = TestDatabase.CreateContext();
+        var personRepo = new Repository<Person>(context);
+        var transactionRepo = new Repository<Transaction>(context);
+        var personService = new PersonService(personRepo);
+
+        var person = new Person { Name = "Adulto", Age = 30 };
+        await personRepo.AddAsync(person);
+        await personRepo.SaveChangesAsync();
+
+        await transactionRepo.AddAsync(new Transaction { Description = "Dez", Amount = 300, Date = new DateOnly(2026, 12, 20), Type = TransactionType.Despesa, PersonId = person.Id });
+        await transactionRepo.AddAsync(new Transaction { Description = "Jan", Amount = 100, Date = new DateOnly(2026, 1, 10), Type = TransactionType.Despesa, PersonId = person.Id });
+        await transactionRepo.AddAsync(new Transaction { Description = "Jun", Amount = 200, Date = new DateOnly(2026, 6, 15), Type = TransactionType.Despesa, PersonId = person.Id });
+        await transactionRepo.SaveChangesAsync();
+
+        var service = new TransactionService(transactionRepo, personService);
+
+        // Act — sort crescente por data
+        var result = await service.GetAllAsync(sort: "date_asc");
+
+        // Assert — ordem: Jan, Jun, Dez
+        Assert.Equal(new[] { "Jan", "Jun", "Dez" }, result.Select(t => t.Description).ToArray());
+    }
+
+    [Fact]
+    public async Task GetAllAsync_DefaultOrder_ShouldBeMostRecentFirst()
+    {
+        // Arrange
+        var context = TestDatabase.CreateContext();
+        var personRepo = new Repository<Person>(context);
+        var transactionRepo = new Repository<Transaction>(context);
+        var personService = new PersonService(personRepo);
+
+        var person = new Person { Name = "Adulto", Age = 30 };
+        await personRepo.AddAsync(person);
+        await personRepo.SaveChangesAsync();
+
+        await transactionRepo.AddAsync(new Transaction { Description = "Jan", Amount = 100, Date = new DateOnly(2026, 1, 10), Type = TransactionType.Despesa, PersonId = person.Id });
+        await transactionRepo.AddAsync(new Transaction { Description = "Dez", Amount = 300, Date = new DateOnly(2026, 12, 20), Type = TransactionType.Despesa, PersonId = person.Id });
+        await transactionRepo.SaveChangesAsync();
+
+        var service = new TransactionService(transactionRepo, personService);
+
+        // Act — sem sort (padrão: mais recente primeiro)
+        var result = await service.GetAllAsync();
+
+        // Assert — ordem: Dez (mais recente) primeiro
+        Assert.Equal(new[] { "Dez", "Jan" }, result.Select(t => t.Description).ToArray());
     }
 }
