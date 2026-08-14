@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using Backend.DTOs;
+using Backend.Models;
 using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Backend.Tests.Integration;
@@ -26,6 +27,18 @@ public class TransactionsControllerTests : IClassFixture<TestWebApplicationFacto
         var response = await _client.PostAsJsonAsync("/api/people", new { name, age });
         var person = await response.Content.ReadFromJsonAsync<PersonResponseDto>();
         return person!.Id;
+    }
+
+    /// <summary>
+    /// Helper: cria uma transação (despesa/receita) e retorna a resposta criada.
+    /// </summary>
+    private async Task<TransactionResponseDto> CreateTransactionAsync(int personId, string description, decimal amount, string type)
+    {
+        var response = await _client.PostAsJsonAsync("/api/transactions", new
+        {
+            description, amount, date = "2026-01-15", type, personId
+        });
+        return (await response.Content.ReadFromJsonAsync<TransactionResponseDto>())!;
     }
 
     [Fact]
@@ -317,5 +330,90 @@ public class TransactionsControllerTests : IClassFixture<TestWebApplicationFacto
         Assert.True(recentIndex >= 0, "A transação mais recente deve existir na resposta.");
         Assert.True(olderIndex >= 0, "A transação mais antiga deve existir na resposta.");
         Assert.True(recentIndex < olderIndex, "A transação mais recente deve vir antes da mais antiga.");
+    }
+
+    // ============================================================
+    // ATUALIZAÇÃO (PUT) e EXCLUSÃO (DELETE)
+    // ============================================================
+
+    [Fact]
+    public async Task Put_ShouldReturnUpdatedTransaction()
+    {
+        // Arrange
+        var personId = await CreatePersonAsync("Adulto", 30);
+        var created = await CreateTransactionAsync(personId, "Antes", 100, "despesa");
+
+        // Act
+        var response = await _client.PutAsJsonAsync($"/api/transactions/{created.Id}", new
+        {
+            description = "Depois", amount = 250, date = "2026-05-20", type = "receita", personId
+        });
+
+        // Assert
+        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+        var updated = await response.Content.ReadFromJsonAsync<TransactionResponseDto>();
+        Assert.Equal("Depois", updated!.Description);
+        Assert.Equal(250m, updated.Amount);
+        Assert.Equal(new DateOnly(2026, 5, 20), updated.Date);
+        Assert.Equal(TransactionType.Receita, updated.Type);
+    }
+
+    [Fact]
+    public async Task Put_WithNonExistingId_ShouldReturn404()
+    {
+        // Arrange
+        var personId = await CreatePersonAsync("Adulto", 30);
+
+        // Act
+        var response = await _client.PutAsJsonAsync("/api/transactions/99999", new
+        {
+            description = "X", amount = 100, date = "2026-01-15", type = "despesa", personId
+        });
+
+        // Assert
+        Assert.Equal(System.Net.HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Put_MinorWithIncome_ShouldReturn400()
+    {
+        // Arrange — transação de despesa de um menor
+        var personId = await CreatePersonAsync("Menor", 15);
+        var created = await CreateTransactionAsync(personId, "Lanche", 10, "despesa");
+
+        // Act — tenta mudar para receita
+        var response = await _client.PutAsJsonAsync($"/api/transactions/{created.Id}", new
+        {
+            description = "Mesada", amount = 100, date = "2026-01-15", type = "receita", personId
+        });
+
+        // Assert
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Delete_ShouldReturn204()
+    {
+        // Arrange
+        var personId = await CreatePersonAsync("Adulto", 30);
+        var created = await CreateTransactionAsync(personId, "Remover", 100, "despesa");
+
+        // Act
+        var response = await _client.DeleteAsync($"/api/transactions/{created.Id}");
+
+        // Assert
+        Assert.Equal(System.Net.HttpStatusCode.NoContent, response.StatusCode);
+        var get = await _client.GetAsync($"/api/transactions/{created.Id}");
+        Assert.Equal(System.Net.HttpStatusCode.NotFound, get.StatusCode);
+    }
+
+    [Fact]
+    public async Task Delete_WithNonExistingId_ShouldReturn404()
+    {
+        // Act
+        var response = await _client.DeleteAsync("/api/transactions/99999");
+
+        // Assert
+        Assert.Equal(System.Net.HttpStatusCode.NotFound, response.StatusCode);
     }
 }

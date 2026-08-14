@@ -4,10 +4,13 @@ import { defineConfig, devices } from '@playwright/test';
  * Configuração dos testes E2E (Playwright).
  *
  * Inicia automaticamente o backend (.NET) e o frontend (Vite) antes dos testes.
- * O backend usa um banco SQLite dedicado (ExpenseControl.e2e.db) para não
- * interferir no banco de desenvolvimento — o globalSetup remove esse arquivo
- * a cada execução, garantindo um estado limpo.
+ * O backend usa um banco SQLite dedicado e ÚNICO por execução
+ * (ExpenseControl.e2e-&lt;timestamp&gt;.db) para não interferir no banco de
+ * desenvolvimento nem em um backend reutilizado (reuseExistingServer). O
+ * globalSetup remove os bancos E2E antigos a cada execução.
  */
+const e2eDbName = `ExpenseControl.e2e-${Date.now()}.db`;
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: false,
@@ -31,8 +34,8 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
       env: {
-        // Banco isolado para os testes E2E (removido no globalSetup)
-        ConnectionStrings__DefaultConnection: 'Data Source=ExpenseControl.e2e.db',
+        // Banco isolado e único por execução (removidos antigos no globalSetup)
+        ConnectionStrings__DefaultConnection: `Data Source=${e2eDbName}`,
       },
     },
     {

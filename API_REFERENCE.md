@@ -363,6 +363,68 @@ curl http://localhost:5000/api/transactions/1
 
 ---
 
+### Atualizar transação
+
+Atualiza uma transação existente (mesmas regras do POST).
+
+```http
+PUT /api/transactions/{id}
+Content-Type: application/json
+```
+
+**Request body:**
+
+```json
+{
+  "description": "Salário (ajustado)",
+  "amount": 5500.00,
+  "date": "2026-07-10",
+  "type": "receita",
+  "personId": 1
+}
+```
+
+**Responses:**
+
+| Status | Cenário |
+|--------|---------|
+| `200 OK` | Transação atualizada (corpo = transação atualizada) |
+| `400 Bad Request` | Pessoa não existe, menor + receita, validação |
+| `404 Not Found` | Transação não encontrada |
+
+**Exemplo curl:**
+
+```bash
+curl -X PUT http://localhost:5000/api/transactions/1 \
+  -H "Content-Type: application/json" \
+  -d '{"description":"Salário (ajustado)","amount":5500,"date":"2026-07-10","type":"receita","personId":1}'
+```
+
+---
+
+### Remover transação
+
+Remove uma transação pelo ID.
+
+```http
+DELETE /api/transactions/{id}
+```
+
+**Responses:**
+
+| Status | Cenário |
+|--------|---------|
+| `204 No Content` | Transação removida |
+| `404 Not Found` | Transação não encontrada |
+
+**Exemplo curl:**
+
+```bash
+curl -X DELETE http://localhost:5000/api/transactions/1
+```
+
+---
+
 ## 📊 Totais
 
 ### Consultar totais

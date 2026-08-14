@@ -5,7 +5,7 @@
  * corretamente com dados mockados.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../App';
 
@@ -16,6 +16,8 @@ vi.mock('../api', () => ({
   deletePerson: vi.fn(),
   getTransactions: vi.fn(),
   createTransaction: vi.fn(),
+  updateTransaction: vi.fn(),
+  deleteTransaction: vi.fn(),
   getTotals: vi.fn(),
 }));
 
@@ -341,6 +343,66 @@ describe('TransactionsTab — form submission', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Menores de 18 anos não podem cadastrar receitas, apenas despesas.')).toBeInTheDocument();
+    });
+  });
+
+  it('should edit a transaction and call updateTransaction', async () => {
+    const user = userEvent.setup();
+    (api.getPeople as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { id: 1, name: 'João', age: 30 },
+    ]);
+    (api.getTransactions as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { id: 7, description: 'Conta de Luz', amount: 200, date: '2026-01-15', type: 'despesa', personId: 1, personName: 'João' },
+    ]);
+    (api.updateTransaction as ReturnType<typeof vi.fn>).mockResolvedValue({});
+
+    render(<App />);
+    await user.click(screen.getByText('💳 Transações'));
+
+    // Clica em Editar na linha
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Editar Conta de Luz/ })).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole('button', { name: /Editar Conta de Luz/ }));
+
+    // Formulário pré-preenchido e botão vira "Salvar"
+    expect(screen.getByPlaceholderText('Descrição')).toHaveValue('Conta de Luz');
+    expect(screen.getByLabelText('Valor')).toHaveValue('200');
+    await user.clear(screen.getByPlaceholderText('Descrição'));
+    await user.type(screen.getByPlaceholderText('Descrição'), 'Conta de Água');
+    await user.click(screen.getByText('💾 Salvar'));
+
+    await waitFor(() => {
+      expect(api.updateTransaction as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(7, expect.objectContaining({ description: 'Conta de Água' }));
+      expect(screen.getByText('Transação atualizada com sucesso!')).toBeInTheDocument();
+    });
+  });
+
+  it('should delete a transaction after confirming in the modal', async () => {
+    const user = userEvent.setup();
+    (api.getPeople as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { id: 1, name: 'João', age: 30 },
+    ]);
+    (api.getTransactions as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { id: 9, description: 'Aluguel', amount: 1500, date: '2026-01-15', type: 'despesa', personId: 1, personName: 'João' },
+    ]);
+    (api.deleteTransaction as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+
+    render(<App />);
+    await user.click(screen.getByText('💳 Transações'));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Excluir Aluguel/ })).toBeInTheDocument();
+    });
+    await user.click(screen.getByRole('button', { name: /Excluir Aluguel/ }));
+
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toBeInTheDocument();
+    await user.click(within(dialog).getByRole('button', { name: /^Excluir$/ }));
+
+    await waitFor(() => {
+      expect(api.deleteTransaction as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(9);
+      expect(screen.getByText('Transação "Aluguel" removida.')).toBeInTheDocument();
     });
   });
 });

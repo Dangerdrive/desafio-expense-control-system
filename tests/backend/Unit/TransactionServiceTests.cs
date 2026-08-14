@@ -399,4 +399,98 @@ public class TransactionServiceTests
         // Assert — ordem: Dez (mais recente) primeiro
         Assert.Equal(new[] { "Dez", "Jan" }, result.Select(t => t.Description).ToArray());
     }
+
+    // ============================================================
+    // ATUALIZAÇÃO (Update) e EXCLUSÃO (Delete)
+    // ============================================================
+
+    [Fact]
+    public async Task UpdateAsync_ShouldUpdateFields()
+    {
+        // Arrange
+        var (service, personId) = await SetupAdultAsync();
+        var created = await service.CreateAsync(new CreateTransactionDto
+        {
+            Description = "Antes", Amount = 100m, Date = new DateOnly(2026, 1, 1), Type = TransactionType.Despesa, PersonId = personId
+        });
+
+        // Act — atualiza todos os campos
+        var result = await service.UpdateAsync(created.Id, new CreateTransactionDto
+        {
+            Description = "Depois", Amount = 250m, Date = new DateOnly(2026, 5, 20), Type = TransactionType.Receita, PersonId = personId
+        });
+
+        // Assert
+        Assert.NotNull(result);
+        Assert.Equal("Depois", result!.Description);
+        Assert.Equal(250m, result.Amount);
+        Assert.Equal(new DateOnly(2026, 5, 20), result.Date);
+        Assert.Equal(TransactionType.Receita, result.Type);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_WithNonExistingId_ShouldReturnNull()
+    {
+        // Arrange
+        var (service, personId) = await SetupAdultAsync();
+        var dto = new CreateTransactionDto
+        {
+            Description = "Teste", Amount = 100m, Date = new DateOnly(2026, 1, 1), Type = TransactionType.Despesa, PersonId = personId
+        };
+
+        // Act
+        var result = await service.UpdateAsync(999, dto);
+
+        // Assert
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_MinorWithIncome_ShouldThrowException()
+    {
+        // Arrange — transação de despesa de um menor
+        var (service, personId) = await SetupMinorAsync();
+        var created = await service.CreateAsync(new CreateTransactionDto
+        {
+            Description = "Lanche", Amount = 10m, Date = new DateOnly(2026, 1, 1), Type = TransactionType.Despesa, PersonId = personId
+        });
+
+        // Act & Assert — tentar mudar para receita deve ser barrado
+        var ex = await Assert.ThrowsAsync<ArgumentException>(() => service.UpdateAsync(created.Id, new CreateTransactionDto
+        {
+            Description = "Mesada", Amount = 100m, Date = new DateOnly(2026, 1, 1), Type = TransactionType.Receita, PersonId = personId
+        }));
+        Assert.Contains("Menores de 18 anos", ex.Message);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_ShouldRemoveTransaction()
+    {
+        // Arrange
+        var (service, personId) = await SetupAdultAsync();
+        var created = await service.CreateAsync(new CreateTransactionDto
+        {
+            Description = "Remover", Amount = 100m, Date = new DateOnly(2026, 1, 1), Type = TransactionType.Despesa, PersonId = personId
+        });
+
+        // Act
+        var deleted = await service.DeleteAsync(created.Id);
+
+        // Assert
+        Assert.True(deleted);
+        Assert.Null(await service.GetByIdAsync(created.Id));
+    }
+
+    [Fact]
+    public async Task DeleteAsync_WithNonExistingId_ShouldReturnFalse()
+    {
+        // Arrange
+        var (service, _) = await SetupAdultAsync();
+
+        // Act
+        var deleted = await service.DeleteAsync(999);
+
+        // Assert
+        Assert.False(deleted);
+    }
 }

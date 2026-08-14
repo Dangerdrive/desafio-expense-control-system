@@ -373,3 +373,34 @@ Want me to start with the bug fixes (#1, #2) and then tackle the backend hardeni
 
 - Backend: **76** (40 unit + 36 integração) · Frontend: **40** (16 API + 20 componentes + 4 contrato) · Total: **116** · E2E: **5**.
 - Restante (opcional): editar/excluir transação, paginação, Docker Compose, autenticação.
+
+---
+
+# 🔄 Rodada 6 — Feature opcional: Editar/Excluir transação
+
+### #26 — CRUD completo de transações (PUT + DELETE) ✅ Concluído
+
+**Backend:**
+- [x] `PUT /api/transactions/{id}` — `TransactionService.UpdateAsync` aplica as MESMAS regras do POST (pessoa existe; menor + receita → 400). 200 com a atualizada / 400 / 404.
+- [x] `DELETE /api/transactions/{id}` — `TransactionService.DeleteAsync` → 204 / 404.
+- [x] Testes: 5 unit (update fields, id inexistente → null, menor+receita → throw, delete remove, delete id inexistente → false) + 5 integração (PUT 200, PUT 404, PUT menor+receita 400, DELETE 204 + GET 404, DELETE 404). Backend **86/86**.
+
+**Frontend:**
+- [x] `api.updateTransaction(id, dto)` e `api.deleteTransaction(id)`.
+- [x] `TransactionsTab`: coluna **Ações** com "✏️ Editar" e "🗑️ Excluir".
+  - Editar → formulário pré-preenchido + botão "💾 Salvar" + "✖ Cancelar".
+  - Excluir → modal `ConfirmDialog` reutilizado.
+- [x] Testes: 2 novos de componente (editar chama updateTransaction; excluir confirma no modal e chama deleteTransaction). Frontend **42/42**.
+
+### #27 — Bug E2E: `globalSetup` quebrava backend reutilizado ✅ Concluído
+
+- [x] Sintoma: `GET /api/transactions` retornava 500 ("Ocorreu um erro inesperado") após criar transação no E2E.
+- [x] Causa raiz: `globalSetup` apagava o banco E2E (`ExpenseControl.e2e.db`) mesmo quando o backend já estava de pé (reuse) — apagar o arquivo por baixo de uma conexão SQLite aberta gera `no such table` / `attempt to write a readonly database`.
+- [x] Correção: banco **único por execução** (`ExpenseControl.e2e-<timestamp>.db`) + `globalSetup` só limpa os bancos antigos quando a porta 5000 está livre (novo backend); se houver backend reutilizado, mantém o banco. Testes usam descrições únicas para serem robustos a dados existentes.
+- [x] Validado nos dois cenários: run com backend novo (5/5) e run reutilizando backend na 5000 (5/5, log `[global-setup] Backend reutilizado...`).
+
+### Contagens atualizadas (fim da rodada 6)
+
+- Backend: **86** (45 unit + 41 integração) · Frontend: **42** (16 API + 22 componentes + 4 contrato) · Total: **128** · E2E: **5**.
+- Docs (`README.md`, `TESTING.md`, `IMPROVEMENTS.md`, `API_REFERENCE.md`) atualizados para 128 + 5 E2E.
+- Restante (opcional): paginação, Docker Compose, autenticação.

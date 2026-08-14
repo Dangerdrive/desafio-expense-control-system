@@ -147,4 +147,63 @@ public class TransactionService
             PersonName = personInfo?.Name ?? "Desconhecida"
         };
     }
+
+    /// <summary>
+    /// Atualiza uma transação existente, aplicando as MESMAS regras de negócio
+    /// do CreateAsync (pessoa existe; menor de 18 só pode ter despesas).
+    /// </summary>
+    /// <param name="id">Identificador da transação a atualizar.</param>
+    /// <param name="dto">Novos dados da transação.</param>
+    /// <returns>A transação atualizada, ou null se o ID não existir.</returns>
+    /// <exception cref="ArgumentException">Se a pessoa não existe ou menor tenta receita.</exception>
+    public async Task<TransactionResponseDto?> UpdateAsync(int id, CreateTransactionDto dto)
+    {
+        var transaction = await _repository.GetByIdAsync(id);
+        if (transaction == null)
+            return null;
+
+        // Validações idênticas às do CreateAsync
+        var personInfo = await _personService.GetInfoAsync(dto.PersonId);
+        if (personInfo == null)
+            throw new ArgumentException("A pessoa informada não existe no cadastro.");
+
+        if (personInfo.Value.Age < 18 && dto.Type == TransactionType.Receita)
+            throw new ArgumentException("Menores de 18 anos não podem cadastrar receitas, apenas despesas.");
+
+        transaction.Description = dto.Description;
+        transaction.Amount = dto.Amount;
+        transaction.Date = dto.Date!.Value;
+        transaction.Type = dto.Type;
+        transaction.PersonId = dto.PersonId;
+
+        await _repository.SaveChangesAsync();
+
+        return new TransactionResponseDto
+        {
+            Id = transaction.Id,
+            Description = transaction.Description,
+            Amount = transaction.Amount,
+            Date = transaction.Date,
+            Type = transaction.Type,
+            PersonId = transaction.PersonId,
+            PersonName = personInfo.Value.Name
+        };
+    }
+
+    /// <summary>
+    /// Remove uma transação pelo ID.
+    /// </summary>
+    /// <param name="id">Identificador da transação.</param>
+    /// <returns>True se a transação foi encontrada e removida; False caso contrário.</returns>
+    public async Task<bool> DeleteAsync(int id)
+    {
+        var transaction = await _repository.GetByIdAsync(id);
+        if (transaction == null)
+            return false;
+
+        _repository.Delete(transaction);
+        await _repository.SaveChangesAsync();
+
+        return true;
+    }
 }

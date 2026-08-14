@@ -90,6 +90,19 @@ export function createTransaction(dto: CreateTransactionDto): Promise<Transactio
   });
 }
 
+/** Atualiza uma transação existente pelo ID. Aplica as mesmas regras do create. */
+export function updateTransaction(id: number, dto: CreateTransactionDto): Promise<Transaction> {
+  return request<Transaction>(`/transactions/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(dto),
+  });
+}
+
+/** Remove uma transação pelo ID. */
+export function deleteTransaction(id: number): Promise<void> {
+  return request<void>(`/transactions/${id}`, { method: 'DELETE' });
+}
+
 // ===================== TOTAIS =====================
 
 /** Consulta os totais (receitas, despesas, saldo) por pessoa e geral. */

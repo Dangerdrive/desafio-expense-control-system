@@ -1,6 +1,6 @@
 # 🧪 Documentação de Testes — Expense Control System
 
-> **Status:** ✅ Suite completa com **116 testes** (76 backend + 40 frontend) + **5 E2E (Playwright)**, todos passando.
+> **Status:** ✅ Suite completa com **128 testes** (86 backend + 42 frontend) + **5 E2E (Playwright)**, todos passando.
 
 ---
 
@@ -8,12 +8,12 @@
 
 | Camada | Framework | Tipo | Quantidade | Status |
 |--------|-----------|------|-----------|--------|
-| Backend — Unit | xUnit + EF Core InMemory | Serviços + Middleware + Repository | 40 | ✅ 40/40 |
-| Backend — Integration | xUnit + WebApplicationFactory | Controllers HTTP + Contrato | 36 | ✅ 36/36 |
+| Backend — Unit | xUnit + EF Core InMemory | Serviços + Middleware + Repository | 45 | ✅ 45/45 |
+| Backend — Integration | xUnit + WebApplicationFactory | Controllers HTTP + Contrato | 41 | ✅ 41/41 |
 | Frontend — Unit | Vitest + mock fetch | API layer | 16 | ✅ 16/16 |
-| Frontend — Component | Vitest + Testing Library | React components | 20 | ✅ 20/20 |
+| Frontend — Component | Vitest + Testing Library | React components | 22 | ✅ 22/22 |
 | Frontend — Contrato | Vitest (contracts/api-contract.json) | Schema da API | 4 | ✅ 4/4 |
-| **TOTAL** | | | **116** | **✅ 116/116** |
+| **TOTAL** | | | **128** | **✅ 128/128** |
 | E2E — Playwright | Playwright + Chromium | Fluxos completos (UI + API) | 5 | ✅ 5/5 |
 
 ---
@@ -211,11 +211,11 @@ npx vitest run --reporter=verbose    # Output detalhado
 │                    │(Playwright)│    Playwright       │
 │                   ─┴──────────┴─                     │
 │                 ┌────────────────┐                   │
-│                 │  Integration   │  ← 36 tests       │
+│                 │  Integration   │  ← 41 tests       │
 │                 │  (Controllers) │     WebAppFactory │
 │                ─┴────────────────┴─                  │
 │          ┌─────────────────────────────┐             │
-│          │       Unit Tests            │  ← 80 tests │
+│          │       Unit Tests            │  ← 87 tests │
 │          │  (Services + API + Comps)   │             │
 │          └─────────────────────────────┘             │
 │                                                      │
@@ -338,8 +338,8 @@ Auditoria de qualidade realizada para identificar gaps e melhorias.
 
 - **Antes (da auditoria):** 66 testes (43 backend + 23 frontend)
 - **Depois (da auditoria):** 86 testes (52 backend + 34 frontend)
-- **Atualmente:** 116 testes (76 backend + 40 frontend) + 5 E2E (Playwright)
-- **Aumento (desde a auditoria):** +50 testes (+76%) na suite unitária/integração, +5 E2E
+- **Atualmente:** 128 testes (86 backend + 42 frontend) + 5 E2E (Playwright)
+- **Aumento (desde a auditoria):** +62 testes (+94%) na suite unitária/integração, +5 E2E
 - **Cobertura de validação de entrada:** 0% → 100%
 - **Cobertura de boundary conditions:** 80% → 100%
 - **Cobertura de UI states (loading/error):** 0% → 100%

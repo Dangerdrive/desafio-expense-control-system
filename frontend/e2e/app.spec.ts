@@ -54,19 +54,20 @@ test.describe('Fluxo de Pessoas', () => {
 test.describe('Fluxo de Transações', () => {
   test('cadastra uma receita e ela aparece na listagem', async ({ page }) => {
     const person = unique('Carlos');
+    const description = unique('Receita');
 
     await createPerson(page, person, 30);
     await gotoTransactions(page);
 
-    await page.getByPlaceholder('Descrição').fill('Salário');
+    await page.getByPlaceholder('Descrição').fill(description);
     await page.getByLabel('Valor').fill('2500,50');
     await page.getByLabel('Tipo').selectOption('receita');
     await page.getByLabel('Pessoa').selectOption({ label: `${person} (30a)` });
     await page.getByRole('button', { name: /Registrar/ }).click();
 
     await expect(page.getByText('Transação registrada com sucesso!')).toBeVisible();
-    await expect(page.getByRole('cell', { name: 'Salário' })).toBeVisible();
-    await expect(page.getByRole('cell', { name: 'R$ 2.500,50' })).toBeVisible();
+    await expect(page.getByRole('cell', { name: description, exact: true })).toBeVisible();
+    await expect(page.getByRole('cell', { name: 'R$ 2.500,50', exact: true })).toBeVisible();
   });
 
   test('menor de idade não pode cadastrar receita (regra de negócio)', async ({ page }) => {

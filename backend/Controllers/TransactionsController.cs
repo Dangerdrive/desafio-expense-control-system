@@ -73,4 +73,42 @@ public class TransactionsController : ControllerBase
 
         return Ok(transaction);
     }
+
+    /// <summary>
+    /// Atualiza uma transação existente (mesmas regras de negócio do POST).
+    /// </summary>
+    /// <param name="id">Identificador da transação.</param>
+    /// <param name="dto">Novos dados da transação.</param>
+    /// <returns>200 com a transação atualizada; 400/404 em caso de erro.</returns>
+    [HttpPut("{id}")]
+    public async Task<ActionResult<TransactionResponseDto>> Update(int id, [FromBody] CreateTransactionDto dto)
+    {
+        try
+        {
+            var transaction = await _service.UpdateAsync(id, dto);
+            if (transaction == null)
+                return NotFound(new { message = "Transação não encontrada." });
+
+            return Ok(transaction);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Remove uma transação pelo ID.
+    /// </summary>
+    /// <param name="id">Identificador da transação.</param>
+    /// <returns>204 No Content; 404 se não encontrada.</returns>
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        var deleted = await _service.DeleteAsync(id);
+        if (!deleted)
+            return NotFound(new { message = "Transação não encontrada." });
+
+        return NoContent();
+    }
 }

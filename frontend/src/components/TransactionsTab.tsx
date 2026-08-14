@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import * as api from '../api';
+import ConfirmDialog from './ConfirmDialog';
 import { formatCurrency, formatDate, maskAmountInput, parseAmountInput } from '../utils/format';
 import { getErrorMessage } from '../utils/errors';
 import type { Person, Transaction } from '../types';
@@ -29,6 +30,9 @@ function TransactionsTab() {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingList, setLoadingList] = useState(false);
+  // Edição/exclusão
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<Transaction | null>(null);
   // Filtros da listagem
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
@@ -48,7 +52,7 @@ function TransactionsTab() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(''); setSuccess('');
     const amountNum = parseAmountInput(amount);
@@ -58,12 +62,50 @@ function TransactionsTab() {
     if (isNaN(personIdNum)) { setError('Selecione uma pessoa.'); return; }
     setLoading(true);
     try {
-      await api.createTransaction({ description: description.trim(), amount: amountNum, date, type, personId: personIdNum });
-      setSuccess('Transação registrada com sucesso!');
-      setDescription(''); setAmount(''); setDate(todayISO()); setPersonId('');
+      const dto = { description: description.trim(), amount: amountNum, date, type, personId: personIdNum };
+      if (editingId !== null) {
+        await api.updateTransaction(editingId, dto);
+        setSuccess('Transação atualizada com sucesso!');
+      } else {
+        await api.createTransaction(dto);
+        setSuccess('Transação registrada com sucesso!');
+      }
+      cancelEdit();
       await loadData();
     } catch (err) { setError(getErrorMessage(err)); }
     finally { setLoading(false); }
+  };
+
+  /** Preenche o formulário com os dados de uma transação para edição. */
+  const startEdit = (tx: Transaction) => {
+    setEditingId(tx.id);
+    setDescription(tx.description);
+    setAmount(maskAmountInput(String(tx.amount)));
+    setDate(tx.date);
+    setType(tx.type);
+    setPersonId(String(tx.personId));
+    setError(''); setSuccess('');
+  };
+
+  /** Sai do modo de edição e limpa o formulário. */
+  const cancelEdit = () => {
+    setEditingId(null);
+    setDescription(''); setAmount(''); setDate(todayISO()); setPersonId('');
+  };
+
+  /** Abre o modal de confirmação de exclusão. */
+  const confirmDelete = (tx: Transaction) => setPendingDelete(tx);
+
+  const handleDelete = async () => {
+    if (!pendingDelete) return;
+    const tx = pendingDelete;
+    setPendingDelete(null);
+    setError(''); setSuccess('');
+    try {
+      await api.deleteTransaction(tx.id);
+      setSuccess(`Transação "${tx.description}" removida.`);
+      await loadData();
+    } catch (err) { setError(getErrorMessage(err)); }
   };
 
   return (
@@ -71,7 +113,7 @@ function TransactionsTab() {
       <h2>Cadastro de Transações</h2>
       {error && <div className="alert alert-error">{error}</div>}
       {success && <div className="alert alert-success">{success}</div>}
-      <form onSubmit={handleCreate} className="form-row">
+      <form onSubmit={handleSubmit} className="form-row">
         <input type="text" placeholder="Descrição" value={description} onChange={e => setDescription(e.target.value)} className="input" maxLength={200} />
         <input type="text" inputMode="decimal" aria-label="Valor" placeholder="Valor (ex: 12,50)" value={amount} onChange={e => setAmount(maskAmountInput(e.target.value))} className="input input-sm" />
         <input type="date" aria-label="Data" value={date} onChange={e => setDate(e.target.value)} className="input input-sm" />
@@ -86,8 +128,13 @@ function TransactionsTab() {
           ))}
         </select>
         <button type="submit" className="btn btn-primary" disabled={loading || people.length === 0}>
-          {loading ? 'Salvando...' : '➕ Registrar'}
+          {loading ? 'Salvando...' : editingId !== null ? '💾 Salvar' : '➕ Registrar'}
         </button>
+        {editingId !== null && (
+          <button type="button" className="btn btn-secondary" onClick={cancelEdit} disabled={loading}>
+            ✖ Cancelar
+          </button>
+        )}
       </form>
       {people.length === 0 && <p className="empty-msg">⚠️ Cadastre uma pessoa antes de registrar transações.</p>}
       <div className="rule-info">ℹ️ <strong>Regra:</strong> Menores de 18 anos só podem ter <em>despesas</em> cadastradas.</div>
@@ -107,7 +154,7 @@ function TransactionsTab() {
         <p className="empty-msg">Nenhuma transação registrada.</p>
       ) : (
         <table className="table">
-          <thead><tr><th>Data</th><th>Descrição</th><th>Valor</th><th>Tipo</th><th>Pessoa</th></tr></thead>
+          <thead><tr><th>Data</th><th>Descrição</th><th>Valor</th><th>Tipo</th><th>Pessoa</th><th>Ações</th></tr></thead>
           <tbody>
             {transactions.map(tx => (
               <tr key={tx.id}>
@@ -116,11 +163,26 @@ function TransactionsTab() {
                 <td className={tx.type === 'receita' ? 'text-green' : 'text-red'}>{formatCurrency(tx.amount)}</td>
                 <td><span className={`badge ${tx.type === 'receita' ? 'badge-income' : 'badge-expense'}`}>{tx.type === 'receita' ? '📈 Receita' : '📉 Despesa'}</span></td>
                 <td>{tx.personName}</td>
+                <td>
+                  <button className="btn btn-secondary btn-sm" onClick={() => startEdit(tx)} aria-label={`Editar ${tx.description}`}>✏️ Editar</button>{' '}
+                  <button className="btn btn-danger btn-sm" onClick={() => confirmDelete(tx)} aria-label={`Excluir ${tx.description}`}>🗑️ Excluir</button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       )}
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title="Excluir transação"
+        message={`Excluir a transação "${pendingDelete?.description}"? Esta ação não pode ser desfeita.`}
+        confirmLabel="Excluir"
+        cancelLabel="Cancelar"
+        danger
+        onConfirm={handleDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
     </section>
   );
 }
