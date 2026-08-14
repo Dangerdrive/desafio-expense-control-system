@@ -2,7 +2,7 @@
 
 Sistema full-stack para controle de gastos residenciais — cadastro de pessoas, transações financeiras (receitas e despesas) e consulta de totais consolidados.
 
-> **Status do projeto:** ✅ Funcional e testado — **91 testes (57 backend + 34 frontend), 100% passando** + 5 testes E2E (Playwright).  
+> **Status do projeto:** ✅ Funcional e testado — **107 testes (69 backend + 38 frontend), 100% passando** + 5 testes E2E (Playwright).  
 > **Contexto:** Desafio técnico de desenvolvimento full-stack.  
 > **Especificação original:** [desafio.md](desafio.md)
 
@@ -203,16 +203,18 @@ desafio-expense-control-system/
         ├── TestDatabase.cs            ← Helper para criar DbContext em memória
         ├── TestWebApplicationFactory.cs ← Factory para testes de integração
         │
-        ├── Unit/                      ← Testes unitários (28 testes)
+        ├── Unit/                      ← Testes unitários (36 testes)
         │   ├── PersonServiceTests.cs
         │   ├── TransactionServiceTests.cs
         │   ├── TotalsServiceTests.cs
-        │   └── ExceptionHandlingMiddlewareTests.cs
+        │   ├── ExceptionHandlingMiddlewareTests.cs
+        │   └── RepositoryTests.cs
         │
-        └── Integration/               ← Testes de integração (29 testes)
+        └── Integration/               ← Testes de integração (33 testes)
             ├── PeopleControllerTests.cs
             ├── TransactionsControllerTests.cs
-            └── TotalsControllerTests.cs
+            ├── TotalsControllerTests.cs
+            └── ContractTests.cs       ← Contrato da API (contracts/api-contract.json)
 ```
 
 ---
@@ -278,11 +280,12 @@ Consulte [API_REFERENCE.md](API_REFERENCE.md) para documentação detalhada com 
 
 | Camada | Framework | Qtde. | Comando |
 |--------|-----------|-------|---------|
-| Backend — Unit | xUnit + EF Core InMemory | 28 | `cd tests/backend && dotnet test --filter "Unit"` |
-| Backend — Integration | WebApplicationFactory | 29 | `cd tests/backend && dotnet test --filter "Integration"` |
+| Backend — Unit | xUnit + EF Core InMemory | 36 | `cd tests/backend && dotnet test --filter "Unit"` |
+| Backend — Integration | WebApplicationFactory | 33 | `cd tests/backend && dotnet test --filter "Integration"` |
 | Frontend — API | Vitest + mock fetch | 14 | `cd frontend && npm test` |
 | Frontend — Component | Vitest + Testing Library | 20 | `cd frontend && npm test` |
-| **TOTAL (unitário/integração)** | | **91** | |
+| Frontend — Contrato | Vitest (contracts/api-contract.json) | 4 | `cd frontend && npm test` |
+| **TOTAL (unitário/integração)** | | **107** | |
 | E2E — Playwright | Playwright + Chromium | 5 | `cd frontend && npm run test:e2e` |
 
 ```bash
@@ -300,7 +303,7 @@ Consulte [TESTING.md](TESTING.md) para a documentação completa da suite de tes
 |-----------|----------|
 | [SETUP.md](SETUP.md) | Guia de instalação, configuração e troubleshooting |
 | [API_REFERENCE.md](API_REFERENCE.md) | Referência completa dos endpoints REST |
-| [TESTING.md](TESTING.md) | Documentação da suite de 91 testes |
+| [TESTING.md](TESTING.md) | Documentação da suite de 107 testes |
 | [IMPROVEMENTS.md](IMPROVEMENTS.md) | Plano de melhorias com priorização |
 | [desafio.md](desafio.md) | Especificação original do desafio técnico |
 

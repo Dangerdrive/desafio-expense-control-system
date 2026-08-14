@@ -1,0 +1,33 @@
+{
+  "_comment": "Contrato da API (fonte única de verdade). Os testes de contrato no backend (ContractTests) e no frontend (contract.test.ts) validam que as respostas reais da API batem com estes formatos — qualquer renomeação/remoção de campo aqui quebra o teste, evitando drift entre frontend e backend.",
+  "person": {
+    "id": 1,
+    "name": "Ana",
+    "age": 30
+  },
+  "transaction": {
+    "id": 1,
+    "description": "Salário",
+    "amount": 5000,
+    "type": "receita",
+    "personId": 1,
+    "personName": "Ana"
+  },
+  "totals": {
+    "peopleTotals": [
+      {
+        "personId": 1,
+        "personName": "Ana",
+        "totalIncome": 5000,
+        "totalExpense": 0,
+        "balance": 5000
+      }
+    ],
+    "grandTotalIncome": 5000,
+    "grandTotalExpense": 0,
+    "grandBalance": 5000
+  },
+  "error": {
+    "message": "Mensagem de erro padronizada"
+  }
+}

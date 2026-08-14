@@ -34,25 +34,37 @@ beforeEach(() => {
   });
 });
 
+/**
+ * Renderiza o App e aguarda o carregamento inicial da aba Pessoas se estabilizar.
+ * Sem isto, a Promise assíncrona do loadPeople resolve DEPOIS do fim do teste
+ * síncrono, gerando o warning "An update to X was not wrapped in act(...)".
+ */
+async function renderAppSettled() {
+  render(<App />);
+  await waitFor(() => {
+    expect(screen.queryByText('Carregando pessoas...')).not.toBeInTheDocument();
+  });
+}
+
 // ============================================================
 // APP — Navegação entre abas
 // ============================================================
 
 describe('App', () => {
-  it('should render the header', () => {
-    render(<App />);
+  it('should render the header', async () => {
+    await renderAppSettled();
     expect(screen.getByText('💰 Controle de Gastos Residenciais')).toBeInTheDocument();
   });
 
-  it('should render all three tab buttons', () => {
-    render(<App />);
+  it('should render all three tab buttons', async () => {
+    await renderAppSettled();
     expect(screen.getByText('👥 Pessoas')).toBeInTheDocument();
     expect(screen.getByText('💳 Transações')).toBeInTheDocument();
     expect(screen.getByText('📊 Totais')).toBeInTheDocument();
   });
 
-  it('should show People tab by default', () => {
-    render(<App />);
+  it('should show People tab by default', async () => {
+    await renderAppSettled();
     expect(screen.getByText('Cadastro de Pessoas')).toBeInTheDocument();
   });
 
@@ -105,8 +117,8 @@ describe('PeopleTab', () => {
     });
   });
 
-  it('should show the create form', () => {
-    render(<App />);
+  it('should show the create form', async () => {
+    await renderAppSettled();
     expect(screen.getByPlaceholderText('Nome')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Idade')).toBeInTheDocument();
     expect(screen.getByText('➕ Adicionar')).toBeInTheDocument();

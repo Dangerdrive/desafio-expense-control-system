@@ -29,4 +29,9 @@
     <ProjectReference Include="..\..\backend\Backend.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Contrato de API compartilhado (fonte única de verdade dos formatos JSON) -->
+    <Content Include="..\..\contracts\api-contract.json" Link="api-contract.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

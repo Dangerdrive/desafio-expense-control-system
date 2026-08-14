@@ -313,3 +313,35 @@ Want me to start with the bug fixes (#1, #2) and then tackle the backend hardeni
   - `actions/setup-dotnet@v4` → `@v5`
   - `actions/upload-artifact@v4` → `@v6` (v5 do upload-artifact ainda roda em Node 20; v6 é a primeira que usa Node 24 por padrão)
 - [x] `node-version: 20` → **22 (LTS)** nos jobs frontend e e2e (Node 20 está EOL desde abril/2026).
+
+---
+
+# 🔄 Rodada 4 — Itens menores de qualidade
+
+### #22 — Limpar avisos `act(...)` nos testes frontend ✅ Concluído
+
+- [x] Causa: 4 testes síncronos renderizavam `<App />` e terminavam antes do `loadPeople` (Promise assíncrona) resolver → `setPeople`/`setLoadingList` rodavam fora de `act`.
+- [x] `App.test.tsx` — helper `renderAppSettled()` (renderiza + aguarda o fim do carregamento via `waitFor`); os 4 testes síncronos viraram `async` e usam o helper.
+- [x] Resultado: **0 avisos `act(...)`** e **34/34** testes (agora 38 com o contrato).
+
+### #23 — Testes para `Repository<T>` ✅ Concluído
+
+- [x] `tests/backend/Unit/RepositoryTests.cs` — **8 testes** cobrindo a camada de dados que antes ficava sem cobertura:
+  - `GetByIdAsync` (existe / não existe → null).
+  - `GetAllAsync` (vazio / múltiplos / **com Include** carregando a navegação `Transactions` — regressão do bug #1).
+  - `AddAsync` + `SaveChangesAsync` (persiste; Unit of Work).
+  - `Delete` + `SaveChangesAsync` (remove).
+  - `SaveChangesAsync` sem mudanças (não lança).
+
+### #24 — Teste de contrato frontend ↔ backend ✅ Concluído
+
+- [x] `contracts/api-contract.json` — **fonte única de verdade** com os formatos JSON de `person`, `transaction`, `totals` e `error`.
+- [x] Backend: `tests/backend/Integration/ContractTests.cs` (4 testes) — valida que as **respostas reais** de `/api/people`, `/api/transactions`, `/api/totals` e o erro 400 têm EXATAMENTE as propriedades do contrato (pega renomeação/remoção de campo em DTO). Arquivo copiado para o output via csproj (`Content`).
+- [x] Frontend: `frontend/src/__tests__/contract.test.ts` (4 testes) — valida em **tempo de compilação** (`tsc -b`) que o contrato conforma aos tipos TS (`Person`, `Transaction`, `TotalsResponse`) e em runtime que a camada `api` consome o contrato. `resolveJsonModule` habilitado.
+- [x] Nota: `resolveJsonModule` amplia literais JSON para `string`, então `transaction.type` é convertido explicitamente para a união `'receita'|'despesa'` (valor validado em runtime).
+
+### Contagens atualizadas (fim da rodada 4)
+
+- Backend: **69** (36 unit + 33 integração) · Frontend: **38** (14 API + 20 componentes + 4 contrato) · Total: **107** · E2E: **5**.
+- Docs (`README.md`, `TESTING.md`, `IMPROVEMENTS.md`) atualizados para 107 + 5 E2E.
+- Restante (opcional, fora do escopo): campo data/filtro, editar/excluir transação, paginação, Docker Compose, autenticação.
