@@ -312,4 +312,4 @@ Want me to start with the bug fixes (#1, #2) and then tackle the backend hardeni
   - `actions/setup-node@v4` → `@v5`
   - `actions/setup-dotnet@v4` → `@v5`
   - `actions/upload-artifact@v4` → `@v6` (v5 do upload-artifact ainda roda em Node 20; v6 é a primeira que usa Node 24 por padrão)
-- [x] Aviso pendente (opcional): `node-version: 20` instalado no CI — Node 20 está EOL (abril/2026); considerar Node 22 LTS no futuro (local ainda usa 20).
+- [x] `node-version: 20` → **22 (LTS)** nos jobs frontend e e2e (Node 20 está EOL desde abril/2026).
