@@ -105,3 +105,53 @@ public class TotalsResponseDto
     /// <summary>Saldo líquido geral = receitas totais - despesas totais.</summary>
     public decimal GrandBalance { get; set; }
 }
+
+// ===================== PAGINAÇÃO =====================
+
+/// <summary>
+/// Envelope de resposta paginada usado pelos endpoints de listagem
+/// (GET /api/people e GET /api/transactions).
+/// </summary>
+/// <typeparam name="T">Tipo dos itens da página.</typeparam>
+public class PagedResult<T>
+{
+    /// <summary>Itens da página atual.</summary>
+    public List<T> Items { get; set; } = new();
+
+    /// <summary>Número da página atual (1-based).</summary>
+    public int Page { get; set; } = 1;
+
+    /// <summary>Quantidade de itens por página.</summary>
+    public int PageSize { get; set; } = 10;
+
+    /// <summary>Total de itens no conjunto completo.</summary>
+    public int TotalItems { get; set; }
+
+    /// <summary>Total de páginas.</summary>
+    public int TotalPages { get; set; }
+
+    /// <summary>Existe página seguinte?</summary>
+    public bool HasNext { get; set; }
+
+    /// <summary>Existe página anterior?</summary>
+    public bool HasPrevious { get; set; }
+
+    /// <summary>
+    /// Monta um PagedResult a partir da página já extraída.
+    /// Centraliza o cálculo de TotalPages/HasNext/HasPrevious.
+    /// </summary>
+    public static PagedResult<T> Create(List<T> items, int page, int pageSize, int totalItems)
+    {
+        var safePageSize = pageSize < 1 ? 1 : pageSize;
+        return new PagedResult<T>
+        {
+            Items = items,
+            Page = page < 1 ? 1 : page,
+            PageSize = safePageSize,
+            TotalItems = totalItems,
+            TotalPages = (int)Math.Ceiling(totalItems / (double)safePageSize),
+            HasNext = (page < 1 ? 1 : page) * safePageSize < totalItems,
+            HasPrevious = page > 1
+        };
+    }
+}

@@ -84,16 +84,21 @@ public class TransactionService
     }
 
     /// <summary>
-    /// Lista transações cadastradas, incluindo o nome da pessoa associada.
+    /// Lista transações com paginação, incluindo o nome da pessoa associada.
     ///
     /// Suporta filtros opcionais por período (from/to) e ordenação por data
     /// (sort = "date_asc" | "date_desc"; padrão: mais recente primeiro).
     /// </summary>
+    /// <param name="page">Número da página (1-based).</param>
+    /// <param name="pageSize">Quantidade por página (1–100).</param>
     /// <param name="from">Data inicial do filtro (inclusiva), opcional.</param>
     /// <param name="to">Data final do filtro (inclusiva), opcional.</param>
     /// <param name="sort">Ordem: "date_asc" ou "date_desc" (padrão).</param>
-    public async Task<List<TransactionResponseDto>> GetAllAsync(DateOnly? from = null, DateOnly? to = null, string? sort = null)
+    public async Task<PagedResult<TransactionResponseDto>> GetAllAsync(int page = 1, int pageSize = 10, DateOnly? from = null, DateOnly? to = null, string? sort = null)
     {
+        var safePageSize = Math.Clamp(pageSize, 1, 100);
+        var safePage = Math.Max(page, 1);
+
         // Inclui a navegação Person para popular o PersonName na resposta.
         var transactions = await _repository.GetAllAsync(t => t.Person);
 
@@ -106,11 +111,14 @@ public class TransactionService
 
         // Ordenação por data (padrão: mais recente primeiro)
         var ascending = string.Equals(sort, "date_asc", StringComparison.OrdinalIgnoreCase);
-        query = ascending
+        var ordered = ascending
             ? query.OrderBy(t => t.Date).ThenBy(t => t.Id)
             : query.OrderByDescending(t => t.Date).ThenByDescending(t => t.Id);
+        var orderedList = ordered.ToList();
 
-        return query
+        var items = orderedList
+            .Skip((safePage - 1) * safePageSize)
+            .Take(safePageSize)
             .Select(t => new TransactionResponseDto
             {
                 Id = t.Id,
@@ -122,6 +130,8 @@ public class TransactionService
                 PersonName = t.Person?.Name ?? "Desconhecida"
             })
             .ToList();
+
+        return PagedResult<TransactionResponseDto>.Create(items, safePage, safePageSize, orderedList.Count);
     }
 
     /// <summary>

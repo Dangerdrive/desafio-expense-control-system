@@ -1,6 +1,6 @@
 # 🧪 Documentação de Testes — Expense Control System
 
-> **Status:** ✅ Suite completa com **128 testes** (86 backend + 42 frontend) + **5 E2E (Playwright)**, todos passando.
+> **Status:** ✅ Suite completa com **139 testes** (92 backend + 47 frontend) + **5 E2E (Playwright)**, todos passando.
 
 ---
 
@@ -8,12 +8,12 @@
 
 | Camada | Framework | Tipo | Quantidade | Status |
 |--------|-----------|------|-----------|--------|
-| Backend — Unit | xUnit + EF Core InMemory | Serviços + Middleware + Repository | 45 | ✅ 45/45 |
-| Backend — Integration | xUnit + WebApplicationFactory | Controllers HTTP + Contrato | 41 | ✅ 41/41 |
-| Frontend — Unit | Vitest + mock fetch | API layer | 16 | ✅ 16/16 |
-| Frontend — Component | Vitest + Testing Library | React components | 22 | ✅ 22/22 |
-| Frontend — Contrato | Vitest (contracts/api-contract.json) | Schema da API | 4 | ✅ 4/4 |
-| **TOTAL** | | | **128** | **✅ 128/128** |
+| Backend — Unit | xUnit + EF Core InMemory | Serviços + Middleware + Repository | 47 | ✅ 47/47 |
+| Backend — Integration | xUnit + WebApplicationFactory | Controllers HTTP + Contrato | 45 | ✅ 45/45 |
+| Frontend — Unit | Vitest + mock fetch | API layer | 17 | ✅ 17/17 |
+| Frontend — Component | Vitest + Testing Library | React components | 24 | ✅ 24/24 |
+| Frontend — Contrato | Vitest (contracts/api-contract.json) | Schema da API | 6 | ✅ 6/6 |
+| **TOTAL** | | | **139** | **✅ 139/139** |
 | E2E — Playwright | Playwright + Chromium | Fluxos completos (UI + API) | 5 | ✅ 5/5 |
 
 ---
@@ -44,7 +44,7 @@ npx vitest run --reporter=verbose    # Output detalhado
 
 ## 📋 Backend — Testes Unitários
 
-### PersonServiceTests (12 testes)
+### PersonServiceTests (9 testes)
 
 | # | Teste | Cenário |
 |---|-------|---------|
@@ -53,16 +53,13 @@ npx vitest run --reporter=verbose    # Output detalhado
 | 3 | `CreateAsync_WithMaximumAge` | Idade 150 — limite superior |
 | 4 | `GetAllAsync_WithNoPeople` | Lista vazia quando não há pessoas |
 | 5 | `GetAllAsync_WithMultiplePeople` | Lista ordenada alfabeticamente |
-| 6 | `DeleteAsync_WithExistingPerson` | Remove pessoa existente → true |
-| 7 | `DeleteAsync_WithNonExistingPerson` | Remove pessoa inexistente → false |
-| 8 | `DeleteAsync_ShouldCascadeDeleteTransactions` | **Cascata:** deletar pessoa remove transações |
-| 9 | `ExistsAsync_WithExistingPerson` | Pessoa existe → true |
-| 10 | `ExistsAsync_WithNonExistingPerson` | Pessoa não existe → false |
-| 11 | `GetAgeAsync_WithExistingPerson` | Retorna idade correta |
-| 12 | `GetAgeAsync_WithNonExistingPerson` | Retorna null para pessoa inexistente |
+| 6 | `GetAllAsync_WithPagination` | Paginação: só os itens da página (Skip/Take) |
+| 7 | `DeleteAsync_WithExistingPerson` | Remove pessoa existente → true |
+| 8 | `DeleteAsync_WithNonExistingPerson` | Remove pessoa inexistente → false |
+| 9 | `DeleteAsync_ShouldCascadeDeleteTransactions` | **Cascata:** deletar pessoa remove transações |
 
-### TransactionServiceTests (12 testes)
-1
+### TransactionServiceTests (21 testes)
+
 | # | Teste | Cenário | Regra de Negócio |
 |---|-------|---------|-----------------|
 | 1 | `CreateAsync_AdultWithIncome` | Adulto + receita | ✅ Permitido |
@@ -76,6 +73,16 @@ npx vitest run --reporter=verbose    # Output detalhado
 | 9 | `GetAllAsync_WithMultipleTransactions` | Lista com dados | — |
 | 10 | `CreateAsync_WithVeryLargeAmount` | Valor máximo (R$999M) | ✅ Edge case |
 | 11 | `CreateAsync_WithDecimalPrecision` | Centavos preservados | ✅ Precisão |
+| 12 | `CreateAsync_ShouldPreserveDate` | Data informada é preservada | ✅ |
+| 13 | `GetAllAsync_WithDateRange` | Filtro por período (de/até) | — |
+| 14 | `GetAllAsync_WithSortAscending` | Ordenação por data crescente | — |
+| 15 | `GetAllAsync_DefaultOrder` | Ordem padrão: mais recente primeiro | — |
+| 16 | `GetAllAsync_WithPagination` | Paginação: só os itens da página | — |
+| 17 | `UpdateAsync_ShouldUpdateFields` | PUT atualiza os campos | ✅ |
+| 18 | `UpdateAsync_WithNonExistingId` | PUT id inexistente → null | ❌ 404 |
+| 19 | `UpdateAsync_MinorWithIncome` | PUT menor + receita → throw | ❌ Bloqueado |
+| 20 | `DeleteAsync_ShouldRemoveTransaction` | DELETE remove transação → true | ✅ |
+| 21 | `DeleteAsync_WithNonExistingId` | DELETE id inexistente → false | ❌ 404 |
 
 ### TotalsServiceTests (7 testes)
 
@@ -102,24 +109,25 @@ npx vitest run --reporter=verbose    # Output detalhado
 
 ## 📋 Backend — Testes de Integração
 
-### PeopleControllerTests (12 testes HTTP)
+### PeopleControllerTests (13 testes HTTP)
 
 | # | Teste | Verbo | Status Esperado |
 |---|-------|-------|----------------|
 | 1 | `Post_WithValidData` | POST | 201 Created |
-| 2 | `Get_WithPeople` | GET | 200 + lista |
-| 3 | `Get_WithExistingPerson_ShouldReturn200` | GET | 200 + pessoa |
-| 4 | `Get_WithNonExistingPerson_ShouldReturn404` | GET | 404 Not Found |
-| 5 | `Delete_WithExistingPerson` | DELETE | 204 No Content |
-| 6 | `Delete_WithNonExistingPerson` | DELETE | 404 Not Found |
-| 7 | `Delete_ShouldRemoveAssociatedTransactions` | DELETE | 204 + transações removidas (cascata) |
-| 8 | `Post_WithEmptyName` | POST | 400 Bad Request |
-| 9 | `Post_WithNegativeAge` | POST | 400 Bad Request |
-| 10 | `Post_WithAgeAbove150` | POST | 400 Bad Request |
-| 11 | `Post_WithNameTooLong` | POST | 400 Bad Request |
-| 12 | `Post_ValidationError_ShouldReturnUnifiedMessageShape` | POST | 400 + `{ message }` (sem `errors`) |
+| 2 | `Get_WithPeople` | GET | 200 + lista paginada |
+| 3 | `Get_WithPagination` | GET | 200 + metadados (page, totalPages...) |
+| 4 | `Get_WithExistingPerson_ShouldReturn200` | GET | 200 + pessoa |
+| 5 | `Get_WithNonExistingPerson_ShouldReturn404` | GET | 404 Not Found |
+| 6 | `Delete_WithExistingPerson` | DELETE | 204 No Content |
+| 7 | `Delete_WithNonExistingPerson` | DELETE | 404 Not Found |
+| 8 | `Delete_ShouldRemoveAssociatedTransactions` | DELETE | 204 + transações removidas (cascata) |
+| 9 | `Post_WithEmptyName` | POST | 400 Bad Request |
+| 10 | `Post_WithNegativeAge` | POST | 400 Bad Request |
+| 11 | `Post_WithAgeAbove150` | POST | 400 Bad Request |
+| 12 | `Post_WithNameTooLong` | POST | 400 Bad Request |
+| 13 | `Post_ValidationError_ShouldReturnUnifiedMessageShape` | POST | 400 + `{ message }` (sem `errors`) |
 
-### TransactionsControllerTests (14 testes HTTP)
+### TransactionsControllerTests (23 testes HTTP)
 
 | # | Teste | Verbo | Status | Regra |
 |---|-------|-------|--------|-------|
@@ -137,6 +145,26 @@ npx vitest run --reporter=verbose    # Output detalhado
 | 12 | `Get_ShouldPopulatePersonName` | GET | 200 | ✅ `personName` preenchido |
 | 13 | `Get_WithExistingTransaction_ShouldReturn200` | GET | 200 | ✅ |
 | 14 | `Get_WithNonExistingTransaction_ShouldReturn404` | GET | 404 | ❌ |
+| 15 | `Post_WithMissingDate` | POST | 400 | ❌ Data obrigatória |
+| 16 | `Get_WithDateFilterAndSort` | GET | 200 | ✅ Filtro período + ordenação |
+| 17 | `Get_DefaultOrder` | GET | 200 | ✅ Mais recente primeiro |
+| 18 | `Put_ShouldReturnUpdatedTransaction` | PUT | 200 | ✅ |
+| 19 | `Put_WithNonExistingId` | PUT | 404 | ❌ |
+| 20 | `Put_MinorWithIncome` | PUT | 400 | ❌ Menores de 18 |
+| 21 | `Delete_ShouldReturn204` | DELETE | 204 | ✅ |
+| 22 | `Delete_WithNonExistingId` | DELETE | 404 | ❌ |
+| 23 | `Get_WithPagination` | GET | 200 | ✅ Metadados da página |
+
+### ContractTests (6 testes HTTP — contratos da API)
+
+| # | Teste | Valida |
+|---|-------|--------|
+| 1 | `PeopleResponse_ShouldMatchContract` | `person` (GET /api/people/{id}) |
+| 2 | `TransactionResponse_ShouldMatchContract` | `transaction` (GET /api/transactions/{id}) |
+| 3 | `PeopleListResponse_ShouldMatchContract` | `personPage` (GET /api/people) |
+| 4 | `TransactionsListResponse_ShouldMatchContract` | `transactionPage` (GET /api/transactions) |
+| 5 | `TotalsResponse_ShouldMatchContract` | `totals` (GET /api/totals) |
+| 6 | `ErrorResponse_ShouldMatchContract` | `error` (formato `{ message }`) |
 
 ### TotalsControllerTests (3 testes HTTP)
 
@@ -150,30 +178,33 @@ npx vitest run --reporter=verbose    # Output detalhado
 
 ## 📋 Frontend — Testes da API Layer
 
-### api.test.ts (14 testes)
+### api.test.ts (17 testes)
 
 | # | Teste | Cenário |
 |---|-------|---------|
-| 1 | `getPeople` — sucesso | Retorna lista de pessoas |
-| 2 | `getPeople` — erro 500 | Lança exceção com mensagem |
-| 3 | `createPerson` — sucesso | POST com dados corretos |
-| 4 | `deletePerson` — sucesso | DELETE → void (204) |
-| 5 | `deletePerson` — 404 | Lança "Pessoa não encontrada" |
-| 6 | `getTransactions` — sucesso | Retorna transações |
-| 7 | `createTransaction` — adulto | POST receita → 201 |
-| 8 | `createTransaction` — regra violada | Menor + receita → erro 400 |
-| 9 | `getTotals` — com dados | Estrutura correta |
-| 10 | `getTotals` — vazio | Arrays vazios, zeros |
-| 11 | `getPeople` — network failure | `Failed to fetch` |
-| 12 | `createTransaction` — network failure | `Failed to fetch` |
-| 13 | `getTotals` — network failure | `Network error` |
-| 14 | `deletePerson` — 204 sem body | Não tenta parsear JSON em 204 |
+| 1 | `getPeople` — sucesso | Retorna envelope paginado de pessoas |
+| 2 | `getPeople` — page/pageSize | Envia `?page=&pageSize=` quando informado |
+| 3 | `getPeople` — erro 500 | Lança exceção com mensagem |
+| 4 | `createPerson` — sucesso | POST com dados corretos |
+| 5 | `deletePerson` — sucesso | DELETE → void (204) |
+| 6 | `deletePerson` — 404 | Lança "Pessoa não encontrada" |
+| 7 | `getTransactions` — sucesso | Retorna envelope paginado de transações |
+| 8 | `getTransactions` — filtros | Envia from/to/sort/page/pageSize |
+| 9 | `getTransactions` — sem params | URL sem query string |
+| 10 | `createTransaction` — adulto | POST receita → 201 |
+| 11 | `createTransaction` — regra violada | Menor + receita → erro 400 |
+| 12 | `getTotals` — com dados | Estrutura correta |
+| 13 | `getTotals` — vazio | Arrays vazios, zeros |
+| 14 | `getPeople` — network failure | `Failed to fetch` |
+| 15 | `createTransaction` — network failure | `Failed to fetch` |
+| 16 | `getTotals` — network failure | `Network error` |
+| 17 | `deletePerson` — 204 sem body | Não tenta parsear JSON em 204 |
 
 ---
 
 ## 📋 Frontend — Testes de Componente
 
-### App.test.tsx (20 testes)
+### App.test.tsx (24 testes)
 
 | # | Teste | Componente |
 |---|-------|-----------|
@@ -185,18 +216,33 @@ npx vitest run --reporter=verbose    # Output detalhado
 | 6 | Mensagem de vazio (sem pessoas) | PeopleTab |
 | 7 | Lista pessoas quando há dados | PeopleTab |
 | 8 | Formulário de criação visível | PeopleTab |
-| 9 | Erro de validação (form vazio) | PeopleTab |
-| 10 | Criação de pessoa com sucesso | PeopleTab |
-| 11 | Erro ao criar pessoa | PeopleTab |
-| 12 | Aviso quando não há pessoas | TransactionsTab |
-| 13 | Regra de negócio visível | TransactionsTab |
-| 14 | Campos do formulário de transação | TransactionsTab |
-| 15 | Criação de transação com sucesso | TransactionsTab |
-| 16 | Erro regra de negócio na UI | TransactionsTab |
-| 17 | Botão de atualizar totais | TotalsTab |
-| 18 | Renderiza totais com dados | TotalsTab |
-| 19 | Estado de carregamento (loading) | TotalsTab |
-| 20 | Mensagem de erro na consulta | TotalsTab |
+| 9 | **Paginação da lista de pessoas** (próxima página) | PeopleTab |
+| 10 | Aviso quando não há pessoas | TransactionsTab |
+| 11 | Regra de negócio visível | TransactionsTab |
+| 12 | Campos do formulário de transação | TransactionsTab |
+| 13 | **Paginação da lista de transações** | TransactionsTab |
+| 14 | Botão de atualizar totais | TotalsTab |
+| 15 | Renderiza totais com dados | TotalsTab |
+| 16 | Estado de carregamento (loading) | TotalsTab |
+| 17 | Mensagem de erro na consulta | TotalsTab |
+| 18 | Erro de validação (form vazio) | PeopleTab |
+| 19 | Criação de pessoa com sucesso | PeopleTab |
+| 20 | Erro ao criar pessoa | PeopleTab |
+| 21 | Criação de transação com sucesso | TransactionsTab |
+| 22 | Erro regra de negócio na UI | TransactionsTab |
+| 23 | Edição de transação (chama updateTransaction) | TransactionsTab |
+| 24 | Exclusão de transação (modal + deleteTransaction) | TransactionsTab |
+
+### contract.test.ts (6 testes)
+
+| # | Teste | Valida |
+|---|-------|--------|
+| 1 | `person` | Campos batem com o tipo TS `Person` |
+| 2 | `transaction` | Campos batem com o tipo TS `Transaction` |
+| 3 | `totals` | Campos batem com o tipo TS `TotalsResponse` |
+| 4 | `personPage` | Envelope bate com o tipo TS `PagedResult<Person>` |
+| 5 | `transactionPage` | Itens do envelope batem com `Transaction` |
+| 6 | `a camada api consegue consumir o contrato` | `getPeople`/`getTransactions`/`getTotals` consomem os fixtures |
 
 ---
 
@@ -211,11 +257,11 @@ npx vitest run --reporter=verbose    # Output detalhado
 │                    │(Playwright)│    Playwright       │
 │                   ─┴──────────┴─                     │
 │                 ┌────────────────┐                   │
-│                 │  Integration   │  ← 41 tests       │
+│                 │  Integration   │  ← 45 tests       │
 │                 │  (Controllers) │     WebAppFactory │
 │                ─┴────────────────┴─                  │
 │          ┌─────────────────────────────┐             │
-│          │       Unit Tests            │  ← 87 tests │
+│          │       Unit Tests            │  ← 94 tests │
 │          │  (Services + API + Comps)   │             │
 │          └─────────────────────────────┘             │
 │                                                      │
@@ -249,21 +295,24 @@ expense-control-system/
 │       ├── TestDatabase.cs             # Fixture InMemory (unit)
 │       ├── TestWebApplicationFactory.cs # Factory p/ integração
 │       ├── Unit/
-│       │   ├── PersonServiceTests.cs   # 12 testes
-│       │   ├── TransactionServiceTests.cs # 11 testes
+│       │   ├── PersonServiceTests.cs   # 9 testes
+│       │   ├── TransactionServiceTests.cs # 21 testes
 │       │   ├── TotalsServiceTests.cs   # 7 testes
+│       │   ├── RepositoryTests.cs      # 8 testes
 │       │   └── ExceptionHandlingMiddlewareTests.cs # 2 testes
 │       └── Integration/
-│           ├── PeopleControllerTests.cs    # 12 testes
-│           ├── TransactionsControllerTests.cs # 14 testes
-│           └── TotalsControllerTests.cs    # 3 testes
+│           ├── PeopleControllerTests.cs    # 13 testes
+│           ├── TransactionsControllerTests.cs # 23 testes
+│           ├── TotalsControllerTests.cs    # 3 testes
+│           └── ContractTests.cs            # 6 testes
 └── frontend/
     ├── vite.config.ts                 # Config Vitest + coverage thresholds
     └── src/
         ├── test-setup.ts               # Setup Testing Library
         └── __tests__/
-            ├── api.test.ts             # 14 testes
-            └── App.test.tsx            # 20 testes
+            ├── api.test.ts             # 17 testes
+            ├── App.test.tsx            # 24 testes
+            └── contract.test.ts        # 6 testes
 ```
 
 ---
@@ -338,8 +387,8 @@ Auditoria de qualidade realizada para identificar gaps e melhorias.
 
 - **Antes (da auditoria):** 66 testes (43 backend + 23 frontend)
 - **Depois (da auditoria):** 86 testes (52 backend + 34 frontend)
-- **Atualmente:** 128 testes (86 backend + 42 frontend) + 5 E2E (Playwright)
-- **Aumento (desde a auditoria):** +62 testes (+94%) na suite unitária/integração, +5 E2E
+- **Atualmente:** 139 testes (92 backend + 47 frontend) + 5 E2E (Playwright)
+- **Aumento (desde a auditoria):** +73 testes (+111%) na suite unitária/integração, +5 E2E
 - **Cobertura de validação de entrada:** 0% → 100%
 - **Cobertura de boundary conditions:** 80% → 100%
 - **Cobertura de UI states (loading/error):** 0% → 100%

@@ -8,6 +8,20 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../App';
+import type { PagedResult } from '../types';
+
+/** Envolve uma lista de itens no envelope paginado que a API devolve hoje. */
+function paged<T>(items: T[]): PagedResult<T> {
+  return {
+    items,
+    page: 1,
+    pageSize: 10,
+    totalItems: items.length,
+    totalPages: items.length === 0 ? 0 : 1,
+    hasNext: false,
+    hasPrevious: false,
+  };
+}
 
 // Mock do módulo api para evitar chamadas HTTP reais
 vi.mock('../api', () => ({
@@ -25,9 +39,9 @@ import * as api from '../api';
 
 beforeEach(() => {
   vi.clearAllMocks();
-  // Valores padrão dos mocks
-  (api.getPeople as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-  (api.getTransactions as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+  // Valores padrão dos mocks (envelope paginado)
+  (api.getPeople as ReturnType<typeof vi.fn>).mockResolvedValue(paged([]));
+  (api.getTransactions as ReturnType<typeof vi.fn>).mockResolvedValue(paged([]));
   (api.getTotals as ReturnType<typeof vi.fn>).mockResolvedValue({
     peopleTotals: [],
     grandTotalIncome: 0,
@@ -106,10 +120,10 @@ describe('PeopleTab', () => {
   });
 
   it('should render people list when data exists', async () => {
-    (api.getPeople as ReturnType<typeof vi.fn>).mockResolvedValue([
+    (api.getPeople as ReturnType<typeof vi.fn>).mockResolvedValue(paged([
       { id: 1, name: 'João', age: 30 },
       { id: 2, name: 'Maria', age: 25 },
-    ]);
+    ]));
 
     render(<App />);
 
@@ -124,6 +138,35 @@ describe('PeopleTab', () => {
     expect(screen.getByPlaceholderText('Nome')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Idade')).toBeInTheDocument();
     expect(screen.getByText('➕ Adicionar')).toBeInTheDocument();
+  });
+
+  it('should paginate the people list', async () => {
+    const user = userEvent.setup();
+    const mock = api.getPeople as ReturnType<typeof vi.fn>;
+    mock
+      .mockResolvedValueOnce({
+        items: [{ id: 1, name: 'Ana', age: 30 }],
+        page: 1, pageSize: 10, totalItems: 11, totalPages: 2, hasNext: true, hasPrevious: false,
+      })
+      .mockResolvedValueOnce({
+        items: [{ id: 11, name: 'Bruno', age: 40 }],
+        page: 2, pageSize: 10, totalItems: 11, totalPages: 2, hasNext: false, hasPrevious: true,
+      });
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Ana')).toBeInTheDocument();
+      expect(screen.getByText(/Página 1 de 2/)).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole('button', { name: 'Próxima página' }));
+
+    await waitFor(() => {
+      expect(mock).toHaveBeenLastCalledWith({ page: 2, pageSize: 10 });
+      expect(screen.getByText('Bruno')).toBeInTheDocument();
+      expect(screen.getByText(/Página 2 de 2/)).toBeInTheDocument();
+    });
   });
 });
 
@@ -154,9 +197,9 @@ describe('TransactionsTab', () => {
 
   it('should show transaction form fields', async () => {
     const user = userEvent.setup();
-    (api.getPeople as ReturnType<typeof vi.fn>).mockResolvedValue([
+    (api.getPeople as ReturnType<typeof vi.fn>).mockResolvedValue(paged([
       { id: 1, name: 'João', age: 30 },
-    ]);
+    ]));
 
     render(<App />);
     await user.click(screen.getByText('💳 Transações'));
@@ -164,6 +207,25 @@ describe('TransactionsTab', () => {
     await waitFor(() => {
       expect(screen.getByPlaceholderText('Descrição')).toBeInTheDocument();
       expect(screen.getByLabelText('Valor')).toBeInTheDocument();
+    });
+  });
+
+  it('should show pagination controls for the transaction list', async () => {
+    const user = userEvent.setup();
+    (api.getPeople as ReturnType<typeof vi.fn>).mockResolvedValue(paged([
+      { id: 1, name: 'João', age: 30 },
+    ]));
+    (api.getTransactions as ReturnType<typeof vi.fn>).mockResolvedValue({
+      items: [{ id: 1, description: 'Salário', amount: 5000, date: '2026-01-15', type: 'receita', personId: 1, personName: 'João' }],
+      page: 1, pageSize: 10, totalItems: 11, totalPages: 2, hasNext: true, hasPrevious: false,
+    });
+
+    render(<App />);
+    await user.click(screen.getByText('💳 Transações'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Salário')).toBeInTheDocument();
+      expect(screen.getByText(/Página 1 de 2/)).toBeInTheDocument();
     });
   });
 });
@@ -252,9 +314,9 @@ describe('PeopleTab — form submission', () => {
     (api.createPerson as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: 1, name: 'Novo Usuário', age: 25,
     });
-    (api.getPeople as ReturnType<typeof vi.fn>).mockResolvedValue([
+    (api.getPeople as ReturnType<typeof vi.fn>).mockResolvedValue(paged([
       { id: 1, name: 'Novo Usuário', age: 25 },
-    ]);
+    ]));
 
     render(<App />);
 
@@ -292,10 +354,10 @@ describe('PeopleTab — form submission', () => {
 describe('TransactionsTab — form submission', () => {
   it('should create a transaction successfully', async () => {
     const user = userEvent.setup();
-    (api.getPeople as ReturnType<typeof vi.fn>).mockResolvedValue([
+    (api.getPeople as ReturnType<typeof vi.fn>).mockResolvedValue(paged([
       { id: 1, name: 'João', age: 30 },
-    ]);
-    (api.getTransactions as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    ]));
+    (api.getTransactions as ReturnType<typeof vi.fn>).mockResolvedValue(paged([]));
     (api.createTransaction as ReturnType<typeof vi.fn>).mockResolvedValue({
       id: 1, description: 'Conta de Luz', amount: 200, type: 'despesa', personId: 1, personName: 'João',
     });
@@ -320,10 +382,10 @@ describe('TransactionsTab — form submission', () => {
 
   it('should show business rule error for minor + income', async () => {
     const user = userEvent.setup();
-    (api.getPeople as ReturnType<typeof vi.fn>).mockResolvedValue([
+    (api.getPeople as ReturnType<typeof vi.fn>).mockResolvedValue(paged([
       { id: 1, name: 'João', age: 30 },
-    ]);
-    (api.getTransactions as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    ]));
+    (api.getTransactions as ReturnType<typeof vi.fn>).mockResolvedValue(paged([]));
     (api.createTransaction as ReturnType<typeof vi.fn>).mockRejectedValue(
       new Error('Menores de 18 anos não podem cadastrar receitas, apenas despesas.')
     );
@@ -348,12 +410,12 @@ describe('TransactionsTab — form submission', () => {
 
   it('should edit a transaction and call updateTransaction', async () => {
     const user = userEvent.setup();
-    (api.getPeople as ReturnType<typeof vi.fn>).mockResolvedValue([
+    (api.getPeople as ReturnType<typeof vi.fn>).mockResolvedValue(paged([
       { id: 1, name: 'João', age: 30 },
-    ]);
-    (api.getTransactions as ReturnType<typeof vi.fn>).mockResolvedValue([
+    ]));
+    (api.getTransactions as ReturnType<typeof vi.fn>).mockResolvedValue(paged([
       { id: 7, description: 'Conta de Luz', amount: 200, date: '2026-01-15', type: 'despesa', personId: 1, personName: 'João' },
-    ]);
+    ]));
     (api.updateTransaction as ReturnType<typeof vi.fn>).mockResolvedValue({});
 
     render(<App />);
@@ -380,12 +442,12 @@ describe('TransactionsTab — form submission', () => {
 
   it('should delete a transaction after confirming in the modal', async () => {
     const user = userEvent.setup();
-    (api.getPeople as ReturnType<typeof vi.fn>).mockResolvedValue([
+    (api.getPeople as ReturnType<typeof vi.fn>).mockResolvedValue(paged([
       { id: 1, name: 'João', age: 30 },
-    ]);
-    (api.getTransactions as ReturnType<typeof vi.fn>).mockResolvedValue([
+    ]));
+    (api.getTransactions as ReturnType<typeof vi.fn>).mockResolvedValue(paged([
       { id: 9, description: 'Aluguel', amount: 1500, date: '2026-01-15', type: 'despesa', personId: 1, personName: 'João' },
-    ]);
+    ]));
     (api.deleteTransaction as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
 
     render(<App />);

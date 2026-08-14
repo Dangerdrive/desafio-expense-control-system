@@ -1,14 +1,21 @@
 import { useState, useEffect, useCallback } from 'react';
 import * as api from '../api';
 import ConfirmDialog from './ConfirmDialog';
+import Pagination from './Pagination';
 import { getErrorMessage } from '../utils/errors';
 import type { Person } from '../types';
 
+/** Quantidade de pessoas por página na listagem. */
+const PAGE_SIZE = 10;
+
 /**
- * Aba de cadastro de pessoas: criação, listagem e remoção (com cascata).
+ * Aba de cadastro de pessoas: criação, listagem (com paginação) e remoção (com cascata).
  */
 function PeopleTab() {
   const [people, setPeople] = useState<Person[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalItems, setTotalItems] = useState(0);
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
   const [error, setError] = useState('');
@@ -18,14 +25,20 @@ function PeopleTab() {
   // Pessoa aguardando confirmação de exclusão (null = modal fechado)
   const [pendingDelete, setPendingDelete] = useState<Person | null>(null);
 
-  const loadPeople = useCallback(async () => {
+  const loadPeople = useCallback(async (targetPage: number) => {
     setLoadingList(true);
-    try { setPeople(await api.getPeople()); }
+    try {
+      const result = await api.getPeople({ page: targetPage, pageSize: PAGE_SIZE });
+      setPeople(result.items);
+      setPage(result.page);
+      setTotalPages(result.totalPages);
+      setTotalItems(result.totalItems);
+    }
     catch (err) { setError(getErrorMessage(err, 'Erro ao carregar pessoas.')); }
     finally { setLoadingList(false); }
   }, []);
 
-  useEffect(() => { loadPeople(); }, [loadPeople]);
+  useEffect(() => { loadPeople(1); }, [loadPeople]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +51,8 @@ function PeopleTab() {
       await api.createPerson({ name: name.trim(), age: ageNum });
       setSuccess('Pessoa cadastrada com sucesso!');
       setName(''); setAge('');
-      await loadPeople();
+      // Volta para a primeira página para a nova pessoa ficar visível
+      await loadPeople(1);
     } catch (err) { setError(getErrorMessage(err)); }
     finally { setLoading(false); }
   };
@@ -51,7 +65,13 @@ function PeopleTab() {
     const person = pendingDelete;
     setPendingDelete(null);
     setError(''); setSuccess('');
-    try { await api.deletePerson(person.id); setSuccess(`"${person.name}" removida.`); await loadPeople(); }
+    try {
+      await api.deletePerson(person.id);
+      setSuccess(`"${person.name}" removida.`);
+      // Se a página ficou vazia após a remoção, volta uma página
+      const target = people.length === 1 && page > 1 ? page - 1 : page;
+      await loadPeople(target);
+    }
     catch (err) { setError(getErrorMessage(err)); }
   };
 
@@ -72,18 +92,26 @@ function PeopleTab() {
       ) : people.length === 0 ? (
         <p className="empty-msg">Nenhuma pessoa cadastrada.</p>
       ) : (
-        <table className="table">
-          <thead><tr><th>ID</th><th>Nome</th><th>Idade</th><th>Ações</th></tr></thead>
-          <tbody>
-            {people.map(p => (
-              <tr key={p.id}>
-                <td>{p.id}</td><td>{p.name}</td>
-                <td>{p.age} {p.age < 18 ? '🔞' : ''}</td>
-                <td><button className="btn btn-danger btn-sm" onClick={() => confirmDelete(p)} aria-label={`Remover ${p.name}`}>🗑️ Remover</button></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <>
+          <table className="table">
+            <thead><tr><th>ID</th><th>Nome</th><th>Idade</th><th>Ações</th></tr></thead>
+            <tbody>
+              {people.map(p => (
+                <tr key={p.id}>
+                  <td>{p.id}</td><td>{p.name}</td>
+                  <td>{p.age} {p.age < 18 ? '🔞' : ''}</td>
+                  <td><button className="btn btn-danger btn-sm" onClick={() => confirmDelete(p)} aria-label={`Remover ${p.name}`}>🗑️ Remover</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            onPageChange={loadPeople}
+          />
+        </>
       )}
       <ConfirmDialog
         open={pendingDelete !== null}

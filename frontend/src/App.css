@@ -194,3 +194,20 @@ body {
   display: flex; align-items: center; gap: 6px;
   font-size: 0.85rem; color: #475569;
 }
+
+/* ==========================================
+   Paginação (Pessoas e Transações)
+   ========================================== */
+
+.pagination {
+  display: flex; gap: 12px; align-items: center; justify-content: center;
+  margin-top: 16px; flex-wrap: wrap;
+}
+
+.pagination-info {
+  font-size: 0.85rem; color: #64748b;
+}
+
+.pagination .btn:disabled {
+  opacity: 0.5; cursor: not-allowed;
+}

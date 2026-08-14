@@ -30,20 +30,39 @@ beforeEach(() => {
 // ============================================================
 
 describe('getPeople', () => {
-  it('should return a list of people on success', async () => {
-    const mockData = [
-      { id: 1, name: 'João', age: 30 },
-      { id: 2, name: 'Maria', age: 25 },
-    ];
+  it('should return a paged list of people on success', async () => {
+    const mockData = {
+      items: [
+        { id: 1, name: 'João', age: 30 },
+        { id: 2, name: 'Maria', age: 25 },
+      ],
+      page: 1,
+      pageSize: 10,
+      totalItems: 2,
+      totalPages: 1,
+      hasNext: false,
+      hasPrevious: false,
+    };
     mockFetch.mockResolvedValueOnce(mockResponse(200, mockData));
 
     const result = await getPeople();
 
     expect(result).toEqual(mockData);
+    expect(result.items).toHaveLength(2);
+    expect(result.page).toBe(1);
     expect(mockFetch).toHaveBeenCalledWith(
       'http://localhost:5000/api/people',
       expect.objectContaining({ headers: { 'Content-Type': 'application/json' } }),
     );
+  });
+
+  it('should send page/pageSize query params when provided', async () => {
+    mockFetch.mockResolvedValueOnce(mockResponse(200, { items: [], page: 2, pageSize: 5, totalItems: 0, totalPages: 0, hasNext: false, hasPrevious: true }));
+
+    await getPeople({ page: 2, pageSize: 5 });
+
+    const url = mockFetch.mock.calls[0][0] as string;
+    expect(url).toBe('http://localhost:5000/api/people?page=2&pageSize=5');
   });
 
   it('should throw on server error', async () => {
@@ -105,31 +124,43 @@ describe('deletePerson', () => {
 // ============================================================
 
 describe('getTransactions', () => {
-  it('should return transactions with person names', async () => {
-    const mockData = [
-      { id: 1, description: 'Salário', amount: 5000, date: '2026-01-15', type: 'receita', personId: 1, personName: 'João' },
-    ];
+  it('should return paged transactions with person names', async () => {
+    const mockData = {
+      items: [
+        { id: 1, description: 'Salário', amount: 5000, date: '2026-01-15', type: 'receita', personId: 1, personName: 'João' },
+      ],
+      page: 1,
+      pageSize: 10,
+      totalItems: 1,
+      totalPages: 1,
+      hasNext: false,
+      hasPrevious: false,
+    };
     mockFetch.mockResolvedValueOnce(mockResponse(200, mockData));
 
     const result = await getTransactions();
 
     expect(result).toEqual(mockData);
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].personName).toBe('João');
   });
 
-  it('should send from/to/sort query params when provided', async () => {
-    mockFetch.mockResolvedValueOnce(mockResponse(200, []));
+  it('should send from/to/sort/page/pageSize query params when provided', async () => {
+    mockFetch.mockResolvedValueOnce(mockResponse(200, { items: [], page: 2, pageSize: 5, totalItems: 0, totalPages: 0, hasNext: false, hasPrevious: true }));
 
-    await getTransactions({ from: '2026-01-01', to: '2026-12-31', sort: 'date_asc' });
+    await getTransactions({ from: '2026-01-01', to: '2026-12-31', sort: 'date_asc', page: 2, pageSize: 5 });
 
     const url = mockFetch.mock.calls[0][0] as string;
     expect(url).toContain('/api/transactions?');
     expect(url).toContain('from=2026-01-01');
     expect(url).toContain('to=2026-12-31');
     expect(url).toContain('sort=date_asc');
+    expect(url).toContain('page=2');
+    expect(url).toContain('pageSize=5');
   });
 
   it('should not append query string when no params', async () => {
-    mockFetch.mockResolvedValueOnce(mockResponse(200, []));
+    mockFetch.mockResolvedValueOnce(mockResponse(200, { items: [], page: 1, pageSize: 10, totalItems: 0, totalPages: 0, hasNext: false, hasPrevious: false }));
 
     await getTransactions();
 

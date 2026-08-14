@@ -91,20 +91,35 @@ curl -X POST http://localhost:5000/api/people \
 
 ### Listar pessoas
 
-Retorna todas as pessoas cadastradas, ordenadas alfabeticamente por nome.
+Retorna as pessoas cadastradas com **paginação**, ordenadas alfabeticamente por nome.
 
 ```http
 GET /api/people
+GET /api/people?page=1&pageSize=10
 ```
 
-**Response `200 OK`:**
+**Query params (opcionais):**
+
+| Param | Tipo | Padrão | Descrição |
+|-------|------|--------|-----------|
+| `page` | `int` | `1` | Número da página (mín. 1) |
+| `pageSize` | `int` | `10` | Itens por página (1–100, clamp) |
+
+**Response `200 OK`** — envelope paginado:
 
 ```json
-[
-  { "id": 2, "name": "Ana Costa", "age": 25 },
-  { "id": 1, "name": "João Silva", "age": 30 },
-  { "id": 3, "name": "Pedro Santos", "age": 15 }
-]
+{
+  "items": [
+    { "id": 2, "name": "Ana Costa", "age": 25 },
+    { "id": 1, "name": "João Silva", "age": 30 }
+  ],
+  "page": 1,
+  "pageSize": 10,
+  "totalItems": 3,
+  "totalPages": 1,
+  "hasNext": false,
+  "hasPrevious": false
+}
 ```
 
 > 💡 Pessoas sem transações também aparecem na listagem. O campo `age` é usado pelo frontend para indicar visualmente menores de idade (🔞).
@@ -112,7 +127,7 @@ GET /api/people
 **Exemplo curl:**
 
 ```bash
-curl http://localhost:5000/api/people
+curl "http://localhost:5000/api/people?page=2&pageSize=5"
 ```
 
 ---
@@ -261,7 +276,7 @@ curl -X POST http://localhost:5000/api/transactions \
 
 ### Listar transações
 
-Retorna as transações cadastradas, **ordenadas por data** (mais recentes primeiro por padrão). Suporta filtros opcionais por período (`from`/`to`) e ordenação (`sort`).
+Retorna as transações cadastradas com **paginação**, **ordenadas por data** (mais recentes primeiro por padrão). Suporta filtros opcionais por período (`from`/`to`), ordenação (`sort`) e paginação (`page`/`pageSize`).
 
 ```http
 GET /api/transactions
@@ -274,41 +289,42 @@ GET /api/transactions
 | `from` | `date` (ISO `YYYY-MM-DD`) | Data inicial do filtro (inclusiva) |
 | `to` | `date` (ISO `YYYY-MM-DD`) | Data final do filtro (inclusiva) |
 | `sort` | `string` | `"date_asc"` (crescente) ou `"date_desc"` (padrão) |
+| `page` | `int` | Número da página (padrão `1`, mín. 1) |
+| `pageSize` | `int` | Itens por página (padrão `10`, 1–100, clamp) |
 
-**Exemplo:** `GET /api/transactions?from=2026-01-01&to=2026-12-31&sort=date_asc`
+**Exemplo:** `GET /api/transactions?from=2026-01-01&to=2026-12-31&sort=date_asc&page=1&pageSize=10`
 
-**Response `200 OK`:**
+**Response `200 OK`** — envelope paginado:
 
 ```json
-[
-  {
-    "id": 3,
-    "description": "Lanche",
-    "amount": 25.50,
-    "date": "2026-07-10",
-    "type": "despesa",
-    "personId": 3,
-    "personName": "Pedro Santos"
-  },
-  {
-    "id": 2,
-    "description": "Aluguel",
-    "amount": 1500.00,
-    "date": "2026-06-05",
-    "type": "despesa",
-    "personId": 1,
-    "personName": "João Silva"
-  },
-  {
-    "id": 1,
-    "description": "Salário",
-    "amount": 5000.00,
-    "date": "2026-01-15",
-    "type": "receita",
-    "personId": 1,
-    "personName": "João Silva"
-  }
-]
+{
+  "items": [
+    {
+      "id": 3,
+      "description": "Lanche",
+      "amount": 25.50,
+      "date": "2026-07-10",
+      "type": "despesa",
+      "personId": 3,
+      "personName": "Pedro Santos"
+    },
+    {
+      "id": 2,
+      "description": "Aluguel",
+      "amount": 1500.00,
+      "date": "2026-06-05",
+      "type": "despesa",
+      "personId": 1,
+      "personName": "João Silva"
+    }
+  ],
+  "page": 1,
+  "pageSize": 10,
+  "totalItems": 3,
+  "totalPages": 1,
+  "hasNext": false,
+  "hasPrevious": false
+}
 ```
 
 **Exemplo curl:**
@@ -317,8 +333,8 @@ GET /api/transactions
 # Todas as transações (mais recentes primeiro)
 curl http://localhost:5000/api/transactions
 
-# Filtradas por período e ordenadas de forma crescente
-curl "http://localhost:5000/api/transactions?from=2026-01-01&to=2026-12-31&sort=date_asc"
+# Filtradas por período, ordenadas de forma crescente e paginadas
+curl "http://localhost:5000/api/transactions?from=2026-01-01&to=2026-12-31&sort=date_asc&page=1&pageSize=10"
 ```
 
 ---

@@ -79,7 +79,8 @@ public class PersonServiceTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Empty(result);
+        Assert.Empty(result.Items);
+        Assert.Equal(0, result.TotalItems);
     }
 
     [Fact]
@@ -99,10 +100,38 @@ public class PersonServiceTests
         var result = await service.GetAllAsync();
 
         // Assert — deve retornar ordenado por nome
-        Assert.Equal(3, result.Count);
-        Assert.Equal("Ana", result[0].Name);
-        Assert.Equal("Bruno", result[1].Name);
-        Assert.Equal("Carlos", result[2].Name);
+        Assert.Equal(3, result.TotalItems);
+        Assert.Equal(3, result.Items.Count);
+        Assert.Equal("Ana", result.Items[0].Name);
+        Assert.Equal("Bruno", result.Items[1].Name);
+        Assert.Equal("Carlos", result.Items[2].Name);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WithPagination_ShouldReturnOnlyPageItems()
+    {
+        // Arrange — 5 pessoas, página de 2
+        using var context = TestDatabase.CreateContext();
+        var service = new PersonService(new Repository<Person>(context));
+        context.People.AddRange(
+            new Person { Name = "E", Age = 30 },
+            new Person { Name = "A", Age = 30 },
+            new Person { Name = "D", Age = 30 },
+            new Person { Name = "B", Age = 30 },
+            new Person { Name = "C", Age = 30 });
+        await context.SaveChangesAsync();
+
+        // Act — página 2, 2 itens por página
+        var result = await service.GetAllAsync(page: 2, pageSize: 2);
+
+        // Assert — itens da página 2 (ordenados: C, D) + metadados
+        Assert.Equal(new[] { "C", "D" }, result.Items.Select(p => p.Name).ToArray());
+        Assert.Equal(2, result.Page);
+        Assert.Equal(2, result.PageSize);
+        Assert.Equal(5, result.TotalItems);
+        Assert.Equal(3, result.TotalPages);
+        Assert.True(result.HasNext);
+        Assert.True(result.HasPrevious);
     }
 
     // ============================================================

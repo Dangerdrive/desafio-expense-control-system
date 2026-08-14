@@ -10,7 +10,7 @@
  *    consegue consumir exatamente o que o backend devolve.
  */
 import { describe, it, expect, vi } from 'vitest';
-import type { Person, Transaction, TotalsResponse } from '../types';
+import type { Person, Transaction, TotalsResponse, PagedResult } from '../types';
 import contract from '../../../contracts/api-contract.json';
 
 import { getPeople, getTransactions, getTotals } from '../api';
@@ -34,6 +34,14 @@ describe('Contrato da API (frontend ↔ backend)', () => {
   const transactionFixture: Transaction = {
     ...contract.transaction,
     type: contract.transaction.type as Transaction['type'],
+  };
+  const personPageFixture: PagedResult<Person> = contract.personPage;
+  const transactionPageFixture: PagedResult<Transaction> = {
+    ...contract.transactionPage,
+    items: contract.transactionPage.items.map(item => ({
+      ...item,
+      type: item.type as Transaction['type'],
+    })),
   };
 
   it('person: os campos do contrato batem com os tipos TS', () => {
@@ -81,20 +89,55 @@ describe('Contrato da API (frontend ↔ backend)', () => {
     ]);
   });
 
+  it('personPage: os campos do envelope paginado batem com o tipo PagedResult', () => {
+    expect(Object.keys(personPageFixture).sort()).toEqual([
+      'hasNext',
+      'hasPrevious',
+      'items',
+      'page',
+      'pageSize',
+      'totalItems',
+      'totalPages',
+    ]);
+    expect(Array.isArray(personPageFixture.items)).toBe(true);
+    expect(typeof personPageFixture.page).toBe('number');
+    expect(typeof personPageFixture.pageSize).toBe('number');
+    expect(typeof personPageFixture.totalItems).toBe('number');
+    expect(typeof personPageFixture.totalPages).toBe('number');
+    expect(typeof personPageFixture.hasNext).toBe('boolean');
+    expect(typeof personPageFixture.hasPrevious).toBe('boolean');
+  });
+
+  it('transactionPage: os itens do envelope batem com o tipo Transaction', () => {
+    const item = transactionPageFixture.items[0];
+    expect(Object.keys(item).sort()).toEqual([
+      'amount',
+      'date',
+      'description',
+      'id',
+      'personId',
+      'personName',
+      'type',
+    ]);
+    expect(item.type).toMatch(/^(receita|despesa)$/);
+  });
+
   it('a camada api consegue consumir exatamente o contrato do backend', async () => {
     // Simula o backend devolvendo exatamente o contrato compartilhado
     const mockFetch = vi
       .fn()
-      .mockResolvedValueOnce(mockResponse(200, [contract.person]))
-      .mockResolvedValueOnce(mockResponse(200, [contract.transaction]))
+      .mockResolvedValueOnce(mockResponse(200, contract.personPage))
+      .mockResolvedValueOnce(mockResponse(200, contract.transactionPage))
       .mockResolvedValueOnce(mockResponse(200, contract.totals));
     vi.stubGlobal('fetch', mockFetch);
 
     const people = await getPeople();
-    expect(people).toEqual([contract.person]);
+    expect(people).toEqual(contract.personPage);
+    expect(people.items).toEqual([contract.person]);
 
     const transactions = await getTransactions();
-    expect(transactions).toEqual([contract.transaction]);
+    expect(transactions).toEqual(contract.transactionPage);
+    expect(transactions.items).toEqual([contract.transaction]);
 
     const totals = await getTotals();
     expect(totals).toEqual(contract.totals);

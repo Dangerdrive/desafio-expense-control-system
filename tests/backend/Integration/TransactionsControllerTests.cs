@@ -114,9 +114,9 @@ public class TransactionsControllerTests : IClassFixture<TestWebApplicationFacto
 
         // Assert
         Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
-        var transactions = await response.Content.ReadFromJsonAsync<List<TransactionResponseDto>>();
+        var transactions = await response.Content.ReadFromJsonAsync<PagedResult<TransactionResponseDto>>();
         Assert.NotNull(transactions);
-        Assert.NotEmpty(transactions!);
+        Assert.NotEmpty(transactions!.Items);
     }
 
     [Fact]
@@ -200,11 +200,11 @@ public class TransactionsControllerTests : IClassFixture<TestWebApplicationFacto
         });
 
         // Act
-        var response = await _client.GetAsync("/api/transactions");
-        var transactions = await response.Content.ReadFromJsonAsync<List<TransactionResponseDto>>();
+        var response = await _client.GetAsync("/api/transactions?pageSize=100");
+        var transactions = await response.Content.ReadFromJsonAsync<PagedResult<TransactionResponseDto>>();
 
         // Assert — a transação deve exibir o nome da pessoa (não "Desconhecida")
-        var transaction = Assert.Single(transactions!.Where(t => t.Description == description));
+        var transaction = Assert.Single(transactions!.Items.Where(t => t.Description == description));
         Assert.Equal("Maria Silva", transaction.PersonName);
     }
 
@@ -300,11 +300,11 @@ public class TransactionsControllerTests : IClassFixture<TestWebApplicationFacto
         await _client.PostAsJsonAsync("/api/transactions", new { description = "Dez", amount = 300, date = "2026-12-20", type = "despesa", personId });
 
         // Act — filtro de março a novembro (inclusivo) + ordenação crescente
-        var response = await _client.GetAsync("/api/transactions?from=2026-03-01&to=2026-11-30&sort=date_asc");
-        var transactions = await response.Content.ReadFromJsonAsync<List<TransactionResponseDto>>();
+        var response = await _client.GetAsync("/api/transactions?pageSize=100&from=2026-03-01&to=2026-11-30&sort=date_asc");
+        var transactions = await response.Content.ReadFromJsonAsync<PagedResult<TransactionResponseDto>>();
 
         // Assert — apenas a transação de junho, com a data correta
-        var tx = Assert.Single(transactions!);
+        var tx = Assert.Single(transactions!.Items);
         Assert.Equal("Jun", tx.Description);
         Assert.Equal(new DateOnly(2026, 6, 15), tx.Date);
     }
@@ -320,13 +320,14 @@ public class TransactionsControllerTests : IClassFixture<TestWebApplicationFacto
         await _client.PostAsJsonAsync("/api/transactions", new { description = older, amount = 100, date = "2026-01-10", type = "despesa", personId });
         await _client.PostAsJsonAsync("/api/transactions", new { description = recent, amount = 300, date = "2026-12-20", type = "despesa", personId });
 
-        // Act — sem parâmetros (padrão: mais recente primeiro)
-        var response = await _client.GetAsync("/api/transactions");
-        var transactions = await response.Content.ReadFromJsonAsync<List<TransactionResponseDto>>();
+        // Act — sem parâmetros (padrão: mais recente primeiro); pageSize alto
+        // para que todos os itens do banco compartilhado caibam na página 1
+        var response = await _client.GetAsync("/api/transactions?pageSize=100");
+        var transactions = await response.Content.ReadFromJsonAsync<PagedResult<TransactionResponseDto>>();
 
         // Assert — a mais recente (dezembro) deve vir antes da mais antiga (janeiro)
-        var recentIndex = transactions!.FindIndex(t => t.Description == recent);
-        var olderIndex = transactions.FindIndex(t => t.Description == older);
+        var recentIndex = transactions!.Items.FindIndex(t => t.Description == recent);
+        var olderIndex = transactions.Items.FindIndex(t => t.Description == older);
         Assert.True(recentIndex >= 0, "A transação mais recente deve existir na resposta.");
         Assert.True(olderIndex >= 0, "A transação mais antiga deve existir na resposta.");
         Assert.True(recentIndex < olderIndex, "A transação mais recente deve vir antes da mais antiga.");
@@ -415,5 +416,32 @@ public class TransactionsControllerTests : IClassFixture<TestWebApplicationFacto
 
         // Assert
         Assert.Equal(System.Net.HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    // ============================================================
+    // PAGINAÇÃO
+    // ============================================================
+
+    [Fact]
+    public async Task Get_WithPagination_ShouldReturnPageMetadata()
+    {
+        // Arrange — descrições únicas para isolar das demais transações da classe
+        var personId = await CreatePersonAsync("Adulto", 30);
+        for (var i = 1; i <= 3; i++)
+        {
+            await CreateTransactionAsync(personId, $"Pag_{i}_{Guid.NewGuid():N}", i * 100, "despesa");
+        }
+
+        // Act — página 2, 2 itens por página
+        var response = await _client.GetAsync("/api/transactions?page=2&pageSize=2");
+        var result = await response.Content.ReadFromJsonAsync<PagedResult<TransactionResponseDto>>();
+
+        // Assert — metadados da página (total de itens depende do banco compartilhado,
+        // então validamos apenas a estrutura e a quantidade da página)
+        Assert.Equal(2, result!.Page);
+        Assert.Equal(2, result.PageSize);
+        Assert.Equal(2, result.Items.Count);
+        Assert.True(result.TotalItems >= 3);
+        Assert.True(result.TotalPages >= 2);
     }
 }

@@ -8,6 +8,7 @@ import type {
   Transaction,
   CreateTransactionDto,
   TotalsResponse,
+  PagedResult,
 } from '../types';
 
 // URL base da API.
@@ -45,9 +46,22 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
 
 // ===================== PESSOAS =====================
 
-/** Lista todas as pessoas. */
-export function getPeople(): Promise<Person[]> {
-  return request<Person[]>('/people');
+/** Parâmetros de paginação da listagem de pessoas. */
+export interface PersonQuery {
+  page?: number;
+  pageSize?: number;
+}
+
+/**
+ * Lista pessoas paginadas.
+ * Padrão: página 1, 10 itens por página.
+ */
+export function getPeople(params?: PersonQuery): Promise<PagedResult<Person>> {
+  const query = new URLSearchParams();
+  if (params?.page) query.set('page', String(params.page));
+  if (params?.pageSize) query.set('pageSize', String(params.pageSize));
+  const qs = query.toString();
+  return request<PagedResult<Person>>(`/people${qs ? `?${qs}` : ''}`);
 }
 
 /** Cria uma nova pessoa. */
@@ -65,21 +79,28 @@ export function deletePerson(id: number): Promise<void> {
 
 // ===================== TRANSAÇÕES =====================
 
-/** Parâmetros de filtro/ordenação de transações. */
+/** Parâmetros de filtro/ordenação/paginação de transações. */
 export interface TransactionQuery {
   from?: string; // data inicial "YYYY-MM-DD" (inclusiva)
   to?: string;   // data final "YYYY-MM-DD" (inclusiva)
   sort?: 'date_asc' | 'date_desc'; // ordenação por data (padrão: date_desc)
+  page?: number;
+  pageSize?: number;
 }
 
-/** Lista transações, opcionalmente filtradas por período e ordenadas por data. */
-export function getTransactions(params?: TransactionQuery): Promise<Transaction[]> {
+/**
+ * Lista transações paginadas, opcionalmente filtradas por período e ordenadas por data.
+ * Padrão: página 1, 10 itens por página, ordenação por data decrescente.
+ */
+export function getTransactions(params?: TransactionQuery): Promise<PagedResult<Transaction>> {
   const query = new URLSearchParams();
   if (params?.from) query.set('from', params.from);
   if (params?.to) query.set('to', params.to);
   if (params?.sort) query.set('sort', params.sort);
+  if (params?.page) query.set('page', String(params.page));
+  if (params?.pageSize) query.set('pageSize', String(params.pageSize));
   const qs = query.toString();
-  return request<Transaction[]>(`/transactions${qs ? `?${qs}` : ''}`);
+  return request<PagedResult<Transaction>>(`/transactions${qs ? `?${qs}` : ''}`);
 }
 
 /** Cria uma nova transação. Aplica regra: <18 anos só despesa. */

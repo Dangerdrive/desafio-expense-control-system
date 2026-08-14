@@ -8,11 +8,11 @@
 
 | Área | Progresso | Status |
 |------|-----------|--------|
-| Testes unitários (backend) | 45/45 | ✅ Concluído |
-| Testes de integração (backend) | 41/41 | ✅ Concluído |
-| Testes API (frontend) | 16/16 | ✅ Concluído |
-| Testes componente (frontend) | 22/22 | ✅ Concluído |
-| Testes de contrato (frontend ↔ backend) | 4/4 | ✅ Concluído |
+| Testes unitários (backend) | 47/47 | ✅ Concluído |
+| Testes de integração (backend) | 45/45 | ✅ Concluído |
+| Testes API (frontend) | 17/17 | ✅ Concluído |
+| Testes componente (frontend) | 24/24 | ✅ Concluído |
+| Testes de contrato (frontend ↔ backend) | 6/6 | ✅ Concluído |
 | Repository Pattern | Implementado | ✅ Concluído |
 | Refatoração Services (IRepository) | Implementado | ✅ Concluído |
 | Documentação (README, SETUP, TESTING, API_REFERENCE) | Criada | ✅ Concluído |
@@ -22,6 +22,7 @@
 | CI Pipeline (GitHub Actions) | Implementado | ✅ Concluído |
 | Campo Data em transações + filtro/ordenação | Implementado | ✅ Concluído |
 | Editar/Excluir transação (CRUD completo) | Implementado | ✅ Concluído |
+| Paginação nas listagens (people/transactions) | Implementado | ✅ Concluído |
 
 ---
 
@@ -38,10 +39,10 @@ Evoluir o MVP funcional para **qualidade de produção**: testado, robusto, docu
                     │         E2E (end-to-end)      │  ← ✅ 5 testes (Concluído)
                     │    Fluxo completo no browser   │     Playwright
                     ├──────────────────────────────┤
-                    │   INTEGRATION TESTS           │  ← ✅ 41 testes (Concluído)
-                    │   API controllers HTTP        │     WebApplicationFactory
-                    ├──────────────────────────────┤
-                    │   UNIT TESTS                  │  ← ✅ 87 testes (Concluído)
+│                    │   INTEGRATION TESTS           │  ← ✅ 45 testes (Concluído)
+│                    │   API controllers HTTP        │     WebApplicationFactory
+│                    ├──────────────────────────────┤
+│                    │   UNIT TESTS                  │  ← ✅ 94 testes (Concluído)
                     │   Services + API + Comps      │     xUnit + Vitest
                     └──────────────────────────────┘
                               ▲
@@ -68,9 +69,10 @@ Evoluir o MVP funcional para **qualidade de produção**: testado, robusto, docu
 
 | Controller | Cenários | Qtde. | Status |
 |-----------|----------|-------|--------|
-| `PeopleController` | POST 201, GET 200, GET por ID, DELETE 204/404, cascata, validações, erro unificado | 12 | ✅ |
-| `TransactionsController` | Adulto receita, menor receita→400, menor despesa, pessoa inválida, GET 200, GET por ID, personName | 14 | ✅ |
+| `PeopleController` | POST 201, GET 200 (paginado), GET por ID, DELETE 204/404, cascata, validações, erro unificado | 13 | ✅ |
+| `TransactionsController` | Adulto receita, menor receita→400, menor despesa, pessoa inválida, GET 200 (paginado), GET por ID, personName, data, PUT/DELETE | 23 | ✅ |
 | `TotalsController` | Estrutura JSON, cálculos corretos, campos obrigatórios | 3 | ✅ |
+| `ContractTests` | person, transaction, personPage, transactionPage, totals, error | 6 | ✅ |
 
 **Ferramentas:** `WebApplicationFactory` + xUnit
 
@@ -80,8 +82,8 @@ Evoluir o MVP funcional para **qualidade de produção**: testado, robusto, docu
 
 | Alvo | Cenários | Qtde. | Status |
 |------|----------|-------|--------|
-| `api/index.ts` | Sucesso, erro 400, erro 500, 204 No Content, regra de menor, network failures | 14 | ✅ |
-| Componentes React | Renderização, navegação entre abas, formulários, estados vazios, loading/erro | 20 | ✅ |
+| `api/index.ts` | Sucesso, erro 400, erro 500, 204 No Content, regra de menor, network failures, paginação | 17 | ✅ |
+| Componentes React | Renderização, navegação entre abas, formulários, estados vazios, loading/erro, paginação, editar/excluir | 24 | ✅ |
 
 **Ferramentas:** Vitest + Testing Library + mock fetch
 

@@ -57,3 +57,14 @@ export interface TotalsResponse {
 export interface ApiError {
   message: string;
 }
+
+/** Resultado paginado retornado pela API (GET /people e GET /transactions). */
+export interface PagedResult<T> {
+  items: T[];
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+}

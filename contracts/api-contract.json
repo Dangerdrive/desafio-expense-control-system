@@ -5,6 +5,36 @@
     "name": "Ana",
     "age": 30
   },
+  "personPage": {
+    "items": [
+      { "id": 1, "name": "Ana", "age": 30 }
+    ],
+    "page": 1,
+    "pageSize": 10,
+    "totalItems": 1,
+    "totalPages": 1,
+    "hasNext": false,
+    "hasPrevious": false
+  },
+  "transactionPage": {
+    "items": [
+      {
+        "id": 1,
+        "description": "Salário",
+        "amount": 5000,
+        "date": "2026-01-15",
+        "type": "receita",
+        "personId": 1,
+        "personName": "Ana"
+      }
+    ],
+    "page": 1,
+    "pageSize": 10,
+    "totalItems": 1,
+    "totalPages": 1,
+    "hasNext": false,
+    "hasPrevious": false
+  },
   "transaction": {
     "id": 1,
     "description": "Salário",

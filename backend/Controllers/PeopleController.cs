@@ -32,12 +32,15 @@ public class PeopleController : ControllerBase
     }
 
     /// <summary>
-    /// Lista todas as pessoas cadastradas, ordenadas por nome.
+    /// Lista pessoas cadastradas com paginação, ordenadas por nome.
     /// </summary>
+    /// <example>GET /api/people?page=1&amp;pageSize=10</example>
     [HttpGet]
-    public async Task<ActionResult<List<PersonResponseDto>>> GetAll()
+    public async Task<ActionResult<PagedResult<PersonResponseDto>>> GetAll(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
     {
-        var people = await _service.GetAllAsync();
+        var people = await _service.GetAllAsync(page, pageSize);
         return Ok(people);
     }
 

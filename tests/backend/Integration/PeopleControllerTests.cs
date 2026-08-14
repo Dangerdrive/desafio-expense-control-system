@@ -47,9 +47,32 @@ public class PeopleControllerTests : IClassFixture<TestWebApplicationFactory>
 
         // Assert
         Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
-        var people = await response.Content.ReadFromJsonAsync<List<PersonResponseDto>>();
+        var people = await response.Content.ReadFromJsonAsync<PagedResult<PersonResponseDto>>();
         Assert.NotNull(people);
-        Assert.True(people!.Count >= 2);
+        Assert.True(people!.Items.Count >= 2);
+    }
+
+    [Fact]
+    public async Task Get_WithPagination_ShouldReturnPageMetadata()
+    {
+        // Arrange — cria 3 pessoas
+        await _client.PostAsJsonAsync("/api/people", new { name = "C", age = 30 });
+        await _client.PostAsJsonAsync("/api/people", new { name = "A", age = 30 });
+        await _client.PostAsJsonAsync("/api/people", new { name = "B", age = 30 });
+
+        // Act — página 2, 2 itens por página
+        // (o banco é compartilhado entre os testes da classe via IClassFixture,
+        // então validamos apenas a estrutura e limites, não valores absolutos)
+        var response = await _client.GetAsync("/api/people?page=2&pageSize=2");
+        var result = await response.Content.ReadFromJsonAsync<PagedResult<PersonResponseDto>>();
+
+        // Assert
+        Assert.Equal(2, result!.Page);
+        Assert.Equal(2, result.PageSize);
+        Assert.Equal(2, result.Items.Count);
+        Assert.True(result.TotalItems >= 3, "Deve haver pelo menos as 3 pessoas criadas.");
+        Assert.True(result.TotalPages >= 2, "Deve haver pelo menos 2 páginas.");
+        Assert.True(result.HasPrevious);
     }
 
     [Fact]
@@ -120,8 +143,8 @@ public class PeopleControllerTests : IClassFixture<TestWebApplicationFactory>
 
         // Assert — transações devem sumir (cascata)
         var txResponse = await _client.GetAsync("/api/transactions");
-        var transactions = await txResponse.Content.ReadFromJsonAsync<List<TransactionResponseDto>>();
-        Assert.Empty(transactions!);
+        var transactions = await txResponse.Content.ReadFromJsonAsync<PagedResult<TransactionResponseDto>>();
+        Assert.Empty(transactions!.Items);
     }
 
     // ============================================================

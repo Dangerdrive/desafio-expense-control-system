@@ -43,20 +43,28 @@ public class PersonService
     }
 
     /// <summary>
-    /// Lista todas as pessoas cadastradas no sistema.
+    /// Lista pessoas cadastradas com paginação, ordenadas por nome.
     /// </summary>
-    /// <returns>Lista de pessoas, ordenadas por nome.</returns>
-    public async Task<List<PersonResponseDto>> GetAllAsync()
+    /// <param name="page">Número da página (1-based).</param>
+    /// <param name="pageSize">Quantidade por página (1–100).</param>
+    /// <returns>Envelope paginado com os itens da página.</returns>
+    public async Task<PagedResult<PersonResponseDto>> GetAllAsync(int page = 1, int pageSize = 10)
     {
+        var safePageSize = Math.Clamp(pageSize, 1, 100);
+        var safePage = Math.Max(page, 1);
+
         var people = await _repository.GetAllAsync();
 
         // Ordenação e projeção são feitas em memória após obter os dados.
         // Para conjuntos muito grandes, seria melhor fazer no banco com IQueryable,
         // mas para este escopo, listar tudo e ordenar em memória é perfeitamente aceitável.
-        return people
-            .OrderBy(p => p.Name)
-            .Select(MapToResponse)
-            .ToList();
+        var ordered = people.OrderBy(p => p.Name).ToList();
+
+        return PagedResult<PersonResponseDto>.Create(
+            ordered.Skip((safePage - 1) * safePageSize).Take(safePageSize).Select(MapToResponse).ToList(),
+            safePage,
+            safePageSize,
+            ordered.Count);
     }
 
     /// <summary>

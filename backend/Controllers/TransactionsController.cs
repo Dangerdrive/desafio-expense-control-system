@@ -44,18 +44,21 @@ public class TransactionsController : ControllerBase
     }
 
     /// <summary>
-    /// Lista transações cadastradas, com filtros opcionais:
+    /// Lista transações com paginação e filtros opcionais:
+    /// - page/pageSize: paginação (padrão 1/10).
     /// - from/to: período (inclusivo) pelo campo Date.
     /// - sort: "date_asc" (crescente) ou "date_desc" (padrão, mais recente primeiro).
     /// </summary>
-    /// <example>GET /api/transactions?from=2026-01-01&to=2026-12-31&sort=date_asc</example>
+    /// <example>GET /api/transactions?page=1&amp;pageSize=10&amp;from=2026-01-01&amp;to=2026-12-31&amp;sort=date_asc</example>
     [HttpGet]
-    public async Task<ActionResult<List<TransactionResponseDto>>> GetAll(
+    public async Task<ActionResult<PagedResult<TransactionResponseDto>>> GetAll(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
         [FromQuery] DateOnly? from = null,
         [FromQuery] DateOnly? to = null,
         [FromQuery] string? sort = null)
     {
-        var transactions = await _service.GetAllAsync(from, to, sort);
+        var transactions = await _service.GetAllAsync(page, pageSize, from, to, sort);
         return Ok(transactions);
     }
 

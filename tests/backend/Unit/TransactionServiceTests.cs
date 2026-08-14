@@ -230,7 +230,8 @@ public class TransactionServiceTests
         var result = await service.GetAllAsync();
 
         // Assert
-        Assert.Empty(result);
+        Assert.Empty(result.Items);
+        Assert.Equal(0, result.TotalItems);
     }
 
     [Fact]
@@ -256,7 +257,8 @@ public class TransactionServiceTests
         var result = await service.GetAllAsync();
 
         // Assert
-        Assert.Equal(2, result.Count);
+        Assert.Equal(2, result.Items.Count);
+        Assert.Equal(2, result.TotalItems);
     }
 
     // ============================================================
@@ -340,10 +342,10 @@ public class TransactionServiceTests
         var service = new TransactionService(transactionRepo, personService);
 
         // Act — filtra de março a novembro (inclusivo)
-        var result = await service.GetAllAsync(new DateOnly(2026, 3, 1), new DateOnly(2026, 11, 30));
+        var result = await service.GetAllAsync(1, 10, new DateOnly(2026, 3, 1), new DateOnly(2026, 11, 30));
 
         // Assert — apenas a transação de junho
-        var tx = Assert.Single(result);
+        var tx = Assert.Single(result.Items);
         Assert.Equal("Jun", tx.Description);
     }
 
@@ -371,7 +373,7 @@ public class TransactionServiceTests
         var result = await service.GetAllAsync(sort: "date_asc");
 
         // Assert — ordem: Jan, Jun, Dez
-        Assert.Equal(new[] { "Jan", "Jun", "Dez" }, result.Select(t => t.Description).ToArray());
+        Assert.Equal(new[] { "Jan", "Jun", "Dez" }, result.Items.Select(t => t.Description).ToArray());
     }
 
     [Fact]
@@ -397,7 +399,42 @@ public class TransactionServiceTests
         var result = await service.GetAllAsync();
 
         // Assert — ordem: Dez (mais recente) primeiro
-        Assert.Equal(new[] { "Dez", "Jan" }, result.Select(t => t.Description).ToArray());
+        Assert.Equal(new[] { "Dez", "Jan" }, result.Items.Select(t => t.Description).ToArray());
+    }
+
+    [Fact]
+    public async Task GetAllAsync_WithPagination_ShouldReturnOnlyPageItems()
+    {
+        // Arrange — 5 transações (datas distintas), página de 2
+        var context = TestDatabase.CreateContext();
+        var personRepo = new Repository<Person>(context);
+        var transactionRepo = new Repository<Transaction>(context);
+        var personService = new PersonService(personRepo);
+
+        var person = new Person { Name = "Adulto", Age = 30 };
+        await personRepo.AddAsync(person);
+        await personRepo.SaveChangesAsync();
+
+        await transactionRepo.AddAsync(new Transaction { Description = "Jan", Amount = 1, Date = new DateOnly(2026, 1, 1), Type = TransactionType.Despesa, PersonId = person.Id });
+        await transactionRepo.AddAsync(new Transaction { Description = "Fev", Amount = 2, Date = new DateOnly(2026, 2, 1), Type = TransactionType.Despesa, PersonId = person.Id });
+        await transactionRepo.AddAsync(new Transaction { Description = "Mar", Amount = 3, Date = new DateOnly(2026, 3, 1), Type = TransactionType.Despesa, PersonId = person.Id });
+        await transactionRepo.AddAsync(new Transaction { Description = "Abr", Amount = 4, Date = new DateOnly(2026, 4, 1), Type = TransactionType.Despesa, PersonId = person.Id });
+        await transactionRepo.AddAsync(new Transaction { Description = "Mai", Amount = 5, Date = new DateOnly(2026, 5, 1), Type = TransactionType.Despesa, PersonId = person.Id });
+        await transactionRepo.SaveChangesAsync();
+
+        var service = new TransactionService(transactionRepo, personService);
+
+        // Act — página 2, 2 itens por página, mais recente primeiro
+        var result = await service.GetAllAsync(page: 2, pageSize: 2);
+
+        // Assert — itens da página 2 (ordem desc: Mar, Fev) + metadados
+        Assert.Equal(new[] { "Mar", "Fev" }, result.Items.Select(t => t.Description).ToArray());
+        Assert.Equal(2, result.Page);
+        Assert.Equal(2, result.PageSize);
+        Assert.Equal(5, result.TotalItems);
+        Assert.Equal(3, result.TotalPages);
+        Assert.True(result.HasNext);
+        Assert.True(result.HasPrevious);
     }
 
     // ============================================================

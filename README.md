@@ -2,7 +2,7 @@
 
 Sistema full-stack para controle de gastos residenciais — cadastro de pessoas, transações financeiras (receitas e despesas) e consulta de totais consolidados.
 
-> **Status do projeto:** ✅ Funcional e testado — **128 testes (86 backend + 42 frontend), 100% passando** + 5 testes E2E (Playwright).  
+> **Status do projeto:** ✅ Funcional e testado — **139 testes (92 backend + 47 frontend), 100% passando** + 5 testes E2E (Playwright).  
 > **Contexto:** Desafio técnico de desenvolvimento full-stack.  
 > **Especificação original:** [desafio.md](desafio.md)
 
@@ -194,8 +194,9 @@ desafio-expense-control-system/
 │       │   └── index.ts              ← Interfaces TypeScript (Person, Transaction, Totals, DTOs)
 │       │
 │       └── __tests__/
-│           ├── api.test.ts            ← Testes unitários da camada de API (mock fetch, 16 testes)
-│           └── App.test.tsx           ← Testes de componente React (renderização, navegação, 22 testes)
+│           ├── api.test.ts            ← Testes unitários da camada de API (mock fetch, 17 testes)
+│           ├── App.test.tsx           ← Testes de componente React (renderização, navegação, 24 testes)
+│           └── contract.test.ts       ← Testes de contrato com contracts/api-contract.json (6 testes)
 │
 └── tests/                             ← Testes automatizados
     └── backend/
@@ -203,14 +204,14 @@ desafio-expense-control-system/
         ├── TestDatabase.cs            ← Helper para criar DbContext em memória
         ├── TestWebApplicationFactory.cs ← Factory para testes de integração
         │
-        ├── Unit/                      ← Testes unitários (45 testes)
+│        ├── Unit/                      ← Testes unitários (47 testes)
         │   ├── PersonServiceTests.cs
         │   ├── TransactionServiceTests.cs
         │   ├── TotalsServiceTests.cs
         │   ├── ExceptionHandlingMiddlewareTests.cs
         │   └── RepositoryTests.cs
         │
-        └── Integration/               ← Testes de integração (41 testes)
+│        └── Integration/               ← Testes de integração (45 testes)
             ├── PeopleControllerTests.cs
             ├── TransactionsControllerTests.cs
             ├── TotalsControllerTests.cs
@@ -264,11 +265,11 @@ Consulte [SETUP.md](SETUP.md) para:
 | Método | Rota | Descrição | Status |
 |--------|------|-----------|--------|
 | `POST` | `/api/people` | Criar pessoa | `201 Created` |
-| `GET` | `/api/people` | Listar pessoas | `200 OK` |
+| `GET` | `/api/people` | Listar pessoas (paginação: `page`/`pageSize`) | `200 OK` |
 | `GET` | `/api/people/{id}` | Buscar pessoa | `200 OK` / `404 Not Found` |
 | `DELETE` | `/api/people/{id}` | Remover pessoa | `204 No Content` / `404 Not Found` |
 | `POST` | `/api/transactions` | Criar transação | `201 Created` / `400 Bad Request` |
-| `GET` | `/api/transactions` | Listar transações (filtro por data + ordenação) | `200 OK` |
+| `GET` | `/api/transactions` | Listar transações (filtro por data + ordenação + paginação) | `200 OK` |
 | `GET` | `/api/transactions/{id}` | Buscar transação | `200 OK` / `404 Not Found` |
 | `PUT` | `/api/transactions/{id}` | Atualizar transação | `200 OK` / `400` / `404` |
 | `DELETE` | `/api/transactions/{id}` | Remover transação | `204 No Content` / `404` |
@@ -282,12 +283,12 @@ Consulte [API_REFERENCE.md](API_REFERENCE.md) para documentação detalhada com 
 
 | Camada | Framework | Qtde. | Comando |
 |--------|-----------|-------|---------|
-| Backend — Unit | xUnit + EF Core InMemory | 45 | `cd tests/backend && dotnet test --filter "Unit"` |
-| Backend — Integration | WebApplicationFactory | 41 | `cd tests/backend && dotnet test --filter "Integration"` |
-| Frontend — API | Vitest + mock fetch | 16 | `cd frontend && npm test` |
-| Frontend — Component | Vitest + Testing Library | 22 | `cd frontend && npm test` |
-| Frontend — Contrato | Vitest (contracts/api-contract.json) | 4 | `cd frontend && npm test` |
-| **TOTAL (unitário/integração)** | | **128** | |
+| Backend — Unit | xUnit + EF Core InMemory | 47 | `cd tests/backend && dotnet test --filter "Unit"` |
+| Backend — Integration | WebApplicationFactory | 45 | `cd tests/backend && dotnet test --filter "Integration"` |
+| Frontend — API | Vitest + mock fetch | 17 | `cd frontend && npm test` |
+| Frontend — Component | Vitest + Testing Library | 24 | `cd frontend && npm test` |
+| Frontend — Contrato | Vitest (contracts/api-contract.json) | 6 | `cd frontend && npm test` |
+| **TOTAL (unitário/integração)** | | **139** | |
 | E2E — Playwright | Playwright + Chromium | 5 | `cd frontend && npm run test:e2e` |
 
 ```bash
@@ -305,7 +306,7 @@ Consulte [TESTING.md](TESTING.md) para a documentação completa da suite de tes
 |-----------|----------|
 | [SETUP.md](SETUP.md) | Guia de instalação, configuração e troubleshooting |
 | [API_REFERENCE.md](API_REFERENCE.md) | Referência completa dos endpoints REST |
-| [TESTING.md](TESTING.md) | Documentação da suite de 128 testes |
+| [TESTING.md](TESTING.md) | Documentação da suite de 139 testes |
 | [IMPROVEMENTS.md](IMPROVEMENTS.md) | Plano de melhorias com priorização |
 | [desafio.md](desafio.md) | Especificação original do desafio técnico |
 

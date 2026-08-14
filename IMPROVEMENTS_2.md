@@ -404,3 +404,31 @@ Want me to start with the bug fixes (#1, #2) and then tackle the backend hardeni
 - Backend: **86** (45 unit + 41 integração) · Frontend: **42** (16 API + 22 componentes + 4 contrato) · Total: **128** · E2E: **5**.
 - Docs (`README.md`, `TESTING.md`, `IMPROVEMENTS.md`, `API_REFERENCE.md`) atualizados para 128 + 5 E2E.
 - Restante (opcional): paginação, Docker Compose, autenticação.
+
+# 🔄 Rodada 7 — Feature opcional: Paginação nas listagens
+
+### #28 — Paginação em `GET /api/people` e `GET /api/transactions` ✅ Concluído
+
+**Backend:**
+- [x] `PagedResult<T>` (em `DTOs/Dtos.cs`) — envelope `{ items, page, pageSize, totalItems, totalPages, hasNext, hasPrevious }` com `static Create(...)` calculando `TotalPages` (ceil), `HasNext` (`page*pageSize < totalItems`) e `HasPrevious` (`page > 1`).
+- [x] `PersonService.GetAllAsync(page, pageSize)` — `Math.Clamp(pageSize, 1, 100)`, `Math.Max(page, 1)`, ordena por nome e aplica `Skip/Take`.
+- [x] `TransactionService.GetAllAsync(page, pageSize, from, to, sort)` — aplica filtro de período + ordenação por data e depois pagina.
+- [x] Controllers: `GET /api/people?page=&pageSize=` e `GET /api/transactions?page=&pageSize=&from=&to=&sort=` retornam `PagedResult<T>` (antes: array puro — **mudança quebra contrato**).
+- [x] Testes: 2 unit novos (`GetAllAsync_WithPagination_ShouldReturnOnlyPageItems` em People/Transaction) + 2 integração novos (`Get_WithPagination_ShouldReturnPageMetadata`). Os testes de integração validam **metadados** (não valores absolutos) porque o banco InMemory é compartilhado entre os testes da classe via `IClassFixture`. Backend **92/92**.
+
+**Contrato (fonte única de verdade):**
+- [x] `contracts/api-contract.json`: novos fixtures `personPage` e `transactionPage` (envelope completo) — validados pelos `ContractTests` do backend e pelo `contract.test.ts` do frontend.
+
+**Frontend:**
+- [x] `types/index.ts`: novo tipo genérico `PagedResult<T>`.
+- [x] `api/index.ts`: `getPeople({ page, pageSize })` e `getTransactions({ ... , page, pageSize })` retornam `Promise<PagedResult<...>>` (padrão página 1 / 10 por página).
+- [x] Novo componente `Pagination` (reutilizável): "← Anterior | Página X de Y (N itens) | Próxima →", exibido quando há mais de uma página.
+- [x] `PeopleTab`: paginação na listagem (10/página); após criar volta para a página 1; após excluir volta uma página se a atual esvaziar.
+- [x] `TransactionsTab`: paginação na listagem; filtros (de/até/ordenação) resetam para a página 1; seletor de pessoa carrega **todas** as pessoas via `pageSize: 100`.
+- [x] Testes: 2 novos de componente (paginação de pessoas com navegação; paginação de transações) + API/contrato atualizados para o envelope. Frontend **47/47**.
+
+### Contagens atualizadas (fim da rodada 7)
+
+- Backend: **92** (47 unit + 45 integração) · Frontend: **47** (17 API + 24 componentes + 6 contrato) · Total: **139** · E2E: **5**.
+- Docs (`README.md`, `TESTING.md`, `IMPROVEMENTS.md`, `API_REFERENCE.md`) atualizados para 139 + 5 E2E.
+- Restante (opcional): Docker Compose, autenticação (JWT).

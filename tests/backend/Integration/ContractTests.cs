@@ -63,6 +63,58 @@ public class ContractTests : IClassFixture<TestWebApplicationFactory>
     }
 
     [Fact]
+    public async Task PeopleListResponse_ShouldMatchContract()
+    {
+        // Arrange — cria uma pessoa para a página não ser vazia
+        await _client.PostAsJsonAsync("/api/people", new { name = "Ana", age = 30 });
+
+        // Act — resposta real do GET /api/people (envelope paginado)
+        var response = await _client.GetAsync("/api/people");
+        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+
+        using var contract = LoadContract();
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+
+        // Top-level: items, page, pageSize, totalItems, totalPages, hasNext, hasPrevious
+        AssertObjectMatchesContract(doc.RootElement, contract.RootElement.GetProperty("personPage"), "personPage");
+
+        // Cada item dentro de items: id, name, age
+        var expectedItem = contract.RootElement.GetProperty("personPage").GetProperty("items")[0];
+        var actualItem = doc.RootElement.GetProperty("items")[0];
+        AssertObjectMatchesContract(actualItem, expectedItem, "personPage.items[]");
+    }
+
+    [Fact]
+    public async Task TransactionsListResponse_ShouldMatchContract()
+    {
+        // Arrange — pessoa + transação para a página não ser vazia
+        var personId = await CreatePersonAsync();
+        await _client.PostAsJsonAsync("/api/transactions", new
+        {
+            description = "Salário",
+            amount = 5000,
+            date = "2026-01-15",
+            type = "receita",
+            personId
+        });
+
+        // Act — resposta real do GET /api/transactions (envelope paginado)
+        var response = await _client.GetAsync("/api/transactions");
+        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+
+        using var contract = LoadContract();
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+
+        // Top-level: items, page, pageSize, totalItems, totalPages, hasNext, hasPrevious
+        AssertObjectMatchesContract(doc.RootElement, contract.RootElement.GetProperty("transactionPage"), "transactionPage");
+
+        // Cada item dentro de items: id, description, amount, date, type, personId, personName
+        var expectedItem = contract.RootElement.GetProperty("transactionPage").GetProperty("items")[0];
+        var actualItem = doc.RootElement.GetProperty("items")[0];
+        AssertObjectMatchesContract(actualItem, expectedItem, "transactionPage.items[]");
+    }
+
+    [Fact]
     public async Task TotalsResponse_ShouldMatchContract()
     {
         // Arrange — pessoa + receita para os totais terem dados

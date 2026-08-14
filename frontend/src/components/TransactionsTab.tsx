@@ -1,9 +1,15 @@
 import { useState, useEffect, useCallback } from 'react';
 import * as api from '../api';
 import ConfirmDialog from './ConfirmDialog';
+import Pagination from './Pagination';
 import { formatCurrency, formatDate, maskAmountInput, parseAmountInput } from '../utils/format';
 import { getErrorMessage } from '../utils/errors';
 import type { Person, Transaction } from '../types';
+
+/** Quantidade de transações por página na listagem. */
+const PAGE_SIZE = 10;
+/** Tamanho de página usado para carregar todas as pessoas no seletor. */
+const PEOPLE_PAGE_SIZE = 100;
 
 /** Retorna a data de hoje no formato ISO "YYYY-MM-DD" (local). */
 function todayISO(): string {
@@ -21,6 +27,9 @@ function todayISO(): string {
 function TransactionsTab() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalItems, setTotalItems] = useState(0);
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(todayISO());
@@ -38,17 +47,22 @@ function TransactionsTab() {
   const [to, setTo] = useState('');
   const [sort, setSort] = useState<'date_asc' | 'date_desc'>('date_desc');
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (targetPage?: number) => {
     setLoadingList(true);
     try {
       const [txs, ppl] = await Promise.all([
-        api.getTransactions({ from: from || undefined, to: to || undefined, sort }),
-        api.getPeople(),
+        api.getTransactions({ from: from || undefined, to: to || undefined, sort, page: targetPage ?? page, pageSize: PAGE_SIZE }),
+        // Seletor de pessoas precisa de TODAS (não paginado)
+        api.getPeople({ page: 1, pageSize: PEOPLE_PAGE_SIZE }),
       ]);
-      setTransactions(txs); setPeople(ppl);
+      setTransactions(txs.items);
+      setPage(txs.page);
+      setTotalPages(txs.totalPages);
+      setTotalItems(txs.totalItems);
+      setPeople(ppl.items);
     } catch (err) { setError(getErrorMessage(err, 'Erro ao carregar dados.')); }
     finally { setLoadingList(false); }
-  }, [from, to, sort]);
+  }, [from, to, sort, page]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -71,7 +85,8 @@ function TransactionsTab() {
         setSuccess('Transação registrada com sucesso!');
       }
       cancelEdit();
-      await loadData();
+      // Volta para a primeira página para a nova transação ficar visível
+      await loadData(1);
     } catch (err) { setError(getErrorMessage(err)); }
     finally { setLoading(false); }
   };
@@ -104,7 +119,9 @@ function TransactionsTab() {
     try {
       await api.deleteTransaction(tx.id);
       setSuccess(`Transação "${tx.description}" removida.`);
-      await loadData();
+      // Se a página ficou vazia após a remoção, volta uma página
+      const target = transactions.length === 1 && page > 1 ? page - 1 : page;
+      await loadData(target);
     } catch (err) { setError(getErrorMessage(err)); }
   };
 
@@ -140,9 +157,9 @@ function TransactionsTab() {
       <div className="rule-info">ℹ️ <strong>Regra:</strong> Menores de 18 anos só podem ter <em>despesas</em> cadastradas.</div>
 
       <div className="filter-bar">
-        <label>De <input type="date" aria-label="Data inicial" value={from} onChange={e => setFrom(e.target.value)} className="input input-sm" /></label>
-        <label>Até <input type="date" aria-label="Data final" value={to} onChange={e => setTo(e.target.value)} className="input input-sm" /></label>
-        <select aria-label="Ordenar" value={sort} onChange={e => setSort(e.target.value as 'date_asc' | 'date_desc')} className="input input-sm">
+        <label>De <input type="date" aria-label="Data inicial" value={from} onChange={e => { setFrom(e.target.value); setPage(1); }} className="input input-sm" /></label>
+        <label>Até <input type="date" aria-label="Data final" value={to} onChange={e => { setTo(e.target.value); setPage(1); }} className="input input-sm" /></label>
+        <select aria-label="Ordenar" value={sort} onChange={e => { setSort(e.target.value as 'date_asc' | 'date_desc'); setPage(1); }} className="input input-sm">
           <option value="date_desc">Mais recentes primeiro</option>
           <option value="date_asc">Mais antigas primeiro</option>
         </select>
@@ -153,24 +170,32 @@ function TransactionsTab() {
       ) : transactions.length === 0 ? (
         <p className="empty-msg">Nenhuma transação registrada.</p>
       ) : (
-        <table className="table">
-          <thead><tr><th>Data</th><th>Descrição</th><th>Valor</th><th>Tipo</th><th>Pessoa</th><th>Ações</th></tr></thead>
-          <tbody>
-            {transactions.map(tx => (
-              <tr key={tx.id}>
-                <td>{formatDate(tx.date)}</td>
-                <td>{tx.description}</td>
-                <td className={tx.type === 'receita' ? 'text-green' : 'text-red'}>{formatCurrency(tx.amount)}</td>
-                <td><span className={`badge ${tx.type === 'receita' ? 'badge-income' : 'badge-expense'}`}>{tx.type === 'receita' ? '📈 Receita' : '📉 Despesa'}</span></td>
-                <td>{tx.personName}</td>
-                <td>
-                  <button className="btn btn-secondary btn-sm" onClick={() => startEdit(tx)} aria-label={`Editar ${tx.description}`}>✏️ Editar</button>{' '}
-                  <button className="btn btn-danger btn-sm" onClick={() => confirmDelete(tx)} aria-label={`Excluir ${tx.description}`}>🗑️ Excluir</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <>
+          <table className="table">
+            <thead><tr><th>Data</th><th>Descrição</th><th>Valor</th><th>Tipo</th><th>Pessoa</th><th>Ações</th></tr></thead>
+            <tbody>
+              {transactions.map(tx => (
+                <tr key={tx.id}>
+                  <td>{formatDate(tx.date)}</td>
+                  <td>{tx.description}</td>
+                  <td className={tx.type === 'receita' ? 'text-green' : 'text-red'}>{formatCurrency(tx.amount)}</td>
+                  <td><span className={`badge ${tx.type === 'receita' ? 'badge-income' : 'badge-expense'}`}>{tx.type === 'receita' ? '📈 Receita' : '📉 Despesa'}</span></td>
+                  <td>{tx.personName}</td>
+                  <td>
+                    <button className="btn btn-secondary btn-sm" onClick={() => startEdit(tx)} aria-label={`Editar ${tx.description}`}>✏️ Editar</button>{' '}
+                    <button className="btn btn-danger btn-sm" onClick={() => confirmDelete(tx)} aria-label={`Excluir ${tx.description}`}>🗑️ Excluir</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            onPageChange={loadData}
+          />
+        </>
       )}
 
       <ConfirmDialog
