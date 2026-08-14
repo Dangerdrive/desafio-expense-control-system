@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import * as api from '../api';
 import { formatCurrency } from '../utils/format';
+import { getErrorMessage } from '../utils/errors';
 import type { TotalsResponse } from '../types';
 
 /**
@@ -14,7 +15,7 @@ function TotalsTab() {
   const loadTotals = useCallback(async () => {
     setLoading(true); setError('');
     try { setTotals(await api.getTotals()); }
-    catch { setError('Erro ao consultar totais.'); }
+    catch (err) { setError(getErrorMessage(err, 'Erro ao consultar totais.')); }
     finally { setLoading(false); }
   }, []);
 

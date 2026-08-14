@@ -211,3 +211,79 @@ Want me to start with the bug fixes (#1, #2) and then tackle the backend hardeni
 - [x] `src/utils/format.ts` com `formatCurrency` (remove a duplicação do `fmt`).
 - [x] `App.tsx` agora contém apenas o shell + navegação entre abas.
 - [x] **34/34 testes frontend passando** após o refactor.
+
+---
+
+# 🔄 Rodada 2 — Itens restantes (commit `dce37cd` em diante)
+
+### #8 — `Type` de string para enum com JSON converter ✅ Concluído
+
+- [x] `backend/Models/TransactionType.cs` — enum `Receita = 1, Despesa = 2` (começa em 1 para detectar campo ausente = valor 0).
+- [x] `backend/Models/TransactionTypeJsonConverter.cs` — serializa como `"receita"`/`"despesa"` (contrato da API preservado) e dá erro claro em PT-BR para valores inválidos.
+- [x] `[JsonConverter]` declarado **no enum** (funciona em todos os serializers, inclusive nos testes de integração que usam opções padrão).
+- [x] `Transaction.Type`, `CreateTransactionDto.Type` e `TransactionResponseDto.Type` → `TransactionType`; regex removida (validação via `EnumDataType`).
+- [x] `TransactionService` e `TotalsService` comparam com `TransactionType.Receita/Despesa`.
+- [x] Testes unitários atualizados (enum em vez de strings); teste de integração `Post_WithInvalidType_ShouldReturn400` agora valida a mensagem PT-BR.
+- [x] **Verificação real via API:** `POST /api/transactions` com `"type":"receita"` responde `"type":"receita"`; `"investimento"` → 400 `{ message }`.
+- [x] Backend **61/61** (ainda com os 4 métodos mortos) → depois da limpeza do #10: **57/57**.
+
+### #7 — `EnsureCreated()` → Migrations EF Core ✅ Concluído
+
+- [x] Instalado `dotnet-ef` **8.0.30** (global tool) — alinhado ao EF Core 8.0 do projeto (v10 daria incompatibilidade).
+- [x] `dotnet ef migrations add InitialCreate` → `backend/Migrations/` (People, Transactions, FK, índice; `Type` como INTEGER, `Amount` como TEXT — padrão SQLite).
+- [x] `Program.cs`: `EnsureCreated()` → `Database.Migrate()` com guard `IsRelational()` (não roda em provedores InMemory dos testes).
+- [x] Migração verificada manualmente: `dotnet run` aplica a migration e cria `__EFMigrationsHistory`.
+- [x] Backend **57/57 passando**.
+
+### #10 — Limpeza de código morto ✅ Concluído
+
+- [x] `PersonService.GetAgeAsync` e `ExistsAsync` eram **código morto** (nenhum consumidor além dos próprios testes) após o refactor do #1. Removidos métodos + 4 testes.
+- [x] A "corrida" entre checar idade e inserir transação foi avaliada: irrelevante neste escopo (app single-user, sem concorrência), sem alteração.
+- [x] Build backend **0 warnings / 0 errors** (aviso nullable de `TransactionService.cs` era estado obsoleto de build incremental).
+- [x] Backend: **57** (28 unit + 29 integração) · Frontend: **34** · Total: **91**.
+
+### #13 — Modal de confirmação no lugar de `window.confirm` ✅ Concluído
+
+- [x] `src/components/ConfirmDialog.tsx` — modal acessível (`role="dialog"`, `aria-modal`, `aria-labelledby`), overlay clicável para cancelar.
+- [x] `PeopleTab` agora abre o modal ao clicar em "Remover" (state `pendingDelete`).
+- [x] CSS do modal em `App.css`.
+- [x] Fluxo validado no navegador real (abrir modal → confirmar → pessoa removida).
+
+### #14 — Input de valor sem drift de `parseFloat` ✅ Concluído
+
+- [x] Bug real corrigido: `parseFloat("12,34") === 12` (parava na vírgula) descartava os centavos em teclado pt-BR.
+- [x] `utils/format.ts`: `maskAmountInput` (aceita dígitos + 1 separador, até 2 casas) e `parseAmountInput` (normaliza `,` → `.`, valida, retorna `null` se inválido).
+- [x] `TransactionsTab`: `<input type="text" inputMode="decimal" aria-label="Valor">` em vez de `type="number"`.
+- [x] Validado no navegador real: digitar `2500,50` → registra exatamente `R$ 2.500,50`.
+
+### #16 — Error Boundary + erros não engolidos ✅ Concluído
+
+- [x] `src/components/ErrorBoundary.tsx` — captura erros de renderização com UI amigável e botão "Tentar novamente".
+- [x] `App.tsx` envolvido pelo boundary.
+- [x] `src/utils/errors.ts` — `getErrorMessage(err: unknown, fallback?)`; `catch (err: any)` → `catch (err)` em todas as abas.
+- [x] `loadPeople`/`loadData`/`loadTotals` agora exibem a mensagem real em vez de "Erro ao carregar...".
+- [x] Teste de erro do TotalsTab atualizado para validar a mensagem real (`Falha na rede`).
+- [x] **34/34 testes frontend passando**.
+
+### #18 — Testes E2E com Playwright ✅ Concluído
+
+- [x] `@playwright/test` + Chromium instalados; script `npm run test:e2e`.
+- [x] `playwright.config.ts` — `webServer` inicia backend (`.NET`) e frontend (Vite) automaticamente; backend usa banco isolado `ExpenseControl.e2e.db` via env.
+- [x] `e2e/global-setup.ts` — remove o banco E2E antes de cada execução (estado limpo).
+- [x] `e2e/app.spec.ts` — 5 fluxos: cadastrar pessoa, remover com modal, cadastrar receita (com vírgula), regra do menor, totais.
+- [x] **5/5 passando** ✅ (após instalar `sudo npx playwright install-deps chromium` e corrigir 2 detalhes do Playwright: `getByPlaceholder` em vez de `getByPlaceholderText` — método do Testing Library — e `selectOption({ label })` com string exata em vez de regex).
+- [x] Fluxos validados manualmente via navegador integrado (equivalente aos cenários E2E).
+
+### #19 — CI Pipeline (GitHub Actions) ✅ Concluído
+
+- [x] `.github/workflows/ci.yml` — 3 jobs:
+  - `backend`: `dotnet test` (testes unitários + integração).
+  - `frontend`: `npm ci` + `npm run build` + `npm test`.
+  - `e2e`: `npm ci` + `npx playwright install --with-deps chromium` + `npm run test:e2e` (upload do report em falha).
+- [x] Ativa em push/PR para `main`.
+
+### Contagens atualizadas (fim da rodada 2)
+
+- Backend: **57** (28 unit + 29 integração) · Frontend: **34** (14 API + 20 componentes) · Total: **91** · E2E: **5**.
+- Docs (`README.md`, `TESTING.md`, `IMPROVEMENTS.md`) atualizados para 91 + 5 E2E.
+- Restante (opcional, fora do escopo): campo data/filtro, editar/excluir transação, paginação, Docker Compose, autenticação, avisos `act(...)`.

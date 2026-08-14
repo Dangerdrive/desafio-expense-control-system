@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Backend.Models;
 
 namespace Backend.DTOs;
 
@@ -44,8 +45,8 @@ public class CreateTransactionDto
     public decimal Amount { get; set; }
 
     [Required(ErrorMessage = "O tipo é obrigatório.")]
-    [RegularExpression("^(receita|despesa)$", ErrorMessage = "O tipo deve ser 'receita' ou 'despesa'.")]
-    public string Type { get; set; } = string.Empty;
+    [EnumDataType(typeof(TransactionType), ErrorMessage = "O tipo deve ser 'receita' ou 'despesa'.")]
+    public TransactionType Type { get; set; }
 
     [Required(ErrorMessage = "O identificador da pessoa é obrigatório.")]
     public int PersonId { get; set; }
@@ -59,7 +60,7 @@ public class TransactionResponseDto
     public int Id { get; set; }
     public string Description { get; set; } = string.Empty;
     public decimal Amount { get; set; }
-    public string Type { get; set; } = string.Empty;
+    public TransactionType Type { get; set; }
     public int PersonId { get; set; }
     public string PersonName { get; set; } = string.Empty;
 }

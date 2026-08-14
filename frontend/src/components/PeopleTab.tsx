@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import * as api from '../api';
+import ConfirmDialog from './ConfirmDialog';
+import { getErrorMessage } from '../utils/errors';
 import type { Person } from '../types';
 
 /**
@@ -13,10 +15,13 @@ function PeopleTab() {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [loadingList, setLoadingList] = useState(false);
+  // Pessoa aguardando confirmação de exclusão (null = modal fechado)
+  const [pendingDelete, setPendingDelete] = useState<Person | null>(null);
 
   const loadPeople = useCallback(async () => {
     setLoadingList(true);
-    try { setPeople(await api.getPeople()); } catch { setError('Erro ao carregar pessoas.'); }
+    try { setPeople(await api.getPeople()); }
+    catch (err) { setError(getErrorMessage(err, 'Erro ao carregar pessoas.')); }
     finally { setLoadingList(false); }
   }, []);
 
@@ -34,15 +39,20 @@ function PeopleTab() {
       setSuccess('Pessoa cadastrada com sucesso!');
       setName(''); setAge('');
       await loadPeople();
-    } catch (err: any) { setError(err.message); }
+    } catch (err) { setError(getErrorMessage(err)); }
     finally { setLoading(false); }
   };
 
-  const handleDelete = async (id: number, personName: string) => {
-    if (!confirm(`Remover "${personName}"? Todas as transações desta pessoa também serão removidas.`)) return;
-    setError('');
-    try { await api.deletePerson(id); setSuccess(`"${personName}" removida.`); await loadPeople(); }
-    catch (err: any) { setError(err.message); }
+  // Abre o modal de confirmação em vez de usar window.confirm()
+  const confirmDelete = (person: Person) => setPendingDelete(person);
+
+  const handleDelete = async () => {
+    if (!pendingDelete) return;
+    const person = pendingDelete;
+    setPendingDelete(null);
+    setError(''); setSuccess('');
+    try { await api.deletePerson(person.id); setSuccess(`"${person.name}" removida.`); await loadPeople(); }
+    catch (err) { setError(getErrorMessage(err)); }
   };
 
   return (
@@ -69,12 +79,22 @@ function PeopleTab() {
               <tr key={p.id}>
                 <td>{p.id}</td><td>{p.name}</td>
                 <td>{p.age} {p.age < 18 ? '🔞' : ''}</td>
-                <td><button className="btn btn-danger btn-sm" onClick={() => handleDelete(p.id, p.name)}>🗑️ Remover</button></td>
+                <td><button className="btn btn-danger btn-sm" onClick={() => confirmDelete(p)} aria-label={`Remover ${p.name}`}>🗑️ Remover</button></td>
               </tr>
             ))}
           </tbody>
         </table>
       )}
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title="Remover pessoa"
+        message={`Remover "${pendingDelete?.name}"? Todas as transações desta pessoa também serão removidas.`}
+        confirmLabel="Remover"
+        cancelLabel="Cancelar"
+        danger
+        onConfirm={handleDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
     </section>
   );
 }

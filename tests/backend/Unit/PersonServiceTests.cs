@@ -154,11 +154,11 @@ public class PersonServiceTests
 
         context.Transactions.Add(new Transaction
         {
-            Description = "Salário", Amount = 5000, Type = "receita", PersonId = person.Id
+            Description = "Salário", Amount = 5000, Type = TransactionType.Receita, PersonId = person.Id
         });
         context.Transactions.Add(new Transaction
         {
-            Description = "Aluguel", Amount = 1500, Type = "despesa", PersonId = person.Id
+            Description = "Aluguel", Amount = 1500, Type = TransactionType.Despesa, PersonId = person.Id
         });
         await context.SaveChangesAsync();
 
@@ -168,75 +168,5 @@ public class PersonServiceTests
         // Assert — transações devem ser removidas em cascata
         var remainingTransactions = context.Transactions.ToList();
         Assert.Empty(remainingTransactions);
-    }
-
-    // ============================================================
-    // EXISTS
-    // ============================================================
-
-    [Fact]
-    public async Task ExistsAsync_WithExistingPerson_ShouldReturnTrue()
-    {
-        // Arrange
-        using var context = TestDatabase.CreateContext();
-        var person = new Person { Name = "Teste", Age = 20 };
-        context.People.Add(person);
-        await context.SaveChangesAsync();
-        var service = new PersonService(new Repository<Person>(context));
-
-        // Act
-        var result = await service.ExistsAsync(person.Id);
-
-        // Assert
-        Assert.True(result);
-    }
-
-    [Fact]
-    public async Task ExistsAsync_WithNonExistingPerson_ShouldReturnFalse()
-    {
-        // Arrange
-        using var context = TestDatabase.CreateContext();
-        var service = new PersonService(new Repository<Person>(context));
-
-        // Act
-        var result = await service.ExistsAsync(999);
-
-        // Assert
-        Assert.False(result);
-    }
-
-    // ============================================================
-    // GET AGE
-    // ============================================================
-
-    [Fact]
-    public async Task GetAgeAsync_WithExistingPerson_ShouldReturnAge()
-    {
-        // Arrange
-        using var context = TestDatabase.CreateContext();
-        var person = new Person { Name = "Teste", Age = 42 };
-        context.People.Add(person);
-        await context.SaveChangesAsync();
-        var service = new PersonService(new Repository<Person>(context));
-
-        // Act
-        var age = await service.GetAgeAsync(person.Id);
-
-        // Assert
-        Assert.Equal(42, age);
-    }
-
-    [Fact]
-    public async Task GetAgeAsync_WithNonExistingPerson_ShouldReturnNull()
-    {
-        // Arrange
-        using var context = TestDatabase.CreateContext();
-        var service = new PersonService(new Repository<Person>(context));
-
-        // Act
-        var age = await service.GetAgeAsync(999);
-
-        // Assert
-        Assert.Null(age);
     }
 }

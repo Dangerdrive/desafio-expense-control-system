@@ -1,6 +1,6 @@
 # 🧪 Documentação de Testes — Expense Control System
 
-> **Status:** ✅ Suite completa com **95 testes** (61 backend + 34 frontend), todos passando.
+> **Status:** ✅ Suite completa com **91 testes** (57 backend + 34 frontend) + **5 E2E (Playwright)**, todos passando.
 
 ---
 
@@ -8,11 +8,12 @@
 
 | Camada | Framework | Tipo | Quantidade | Status |
 |--------|-----------|------|-----------|--------|
-| Backend — Unit | xUnit + EF Core InMemory | Serviços + Middleware | 32 | ✅ 32/32 |
+| Backend — Unit | xUnit + EF Core InMemory | Serviços + Middleware | 28 | ✅ 28/28 |
 | Backend — Integration | xUnit + WebApplicationFactory | Controllers HTTP | 29 | ✅ 29/29 |
 | Frontend — Unit | Vitest + mock fetch | API layer | 14 | ✅ 14/14 |
 | Frontend — Component | Vitest + Testing Library | React components | 20 | ✅ 20/20 |
-| **TOTAL** | | | **95** | **✅ 95/95** |
+| **TOTAL** | | | **91** | **✅ 91/91** |
+| E2E — Playwright | Playwright + Chromium | Fluxos completos (UI + API) | 5 | ✅ 5/5 |
 
 ---
 
@@ -205,15 +206,15 @@ npx vitest run --reporter=verbose    # Output detalhado
 │                 Pirâmide de Testes                    │
 │                                                      │
 │                    ┌──────────┐                      │
-│                    │   E2E    │  ← Futuro            │
-│                    │ (0 tests)│                      │
+│                    │   E2E    │  ← 5 testes          │
+│                    │(Playwright)│    Playwright       │
 │                   ─┴──────────┴─                     │
 │                 ┌────────────────┐                   │
 │                 │  Integration   │  ← 29 tests       │
 │                 │  (Controllers) │     WebAppFactory │
 │                ─┴────────────────┴─                  │
 │          ┌─────────────────────────────┐             │
-│          │       Unit Tests            │  ← 66 tests │
+│          │       Unit Tests            │  ← 62 tests │
 │          │  (Services + API + Comps)   │             │
 │          └─────────────────────────────┘             │
 │                                                      │
@@ -324,20 +325,20 @@ Auditoria de qualidade realizada para identificar gaps e melhorias.
 
 | # | Prioridade | Recomendação |
 |---|-----------|--------------|
-| 1 | 🟡 | **E2E tests**: Adicionar testes end-to-end com Playwright ou Cypress para fluxos completos |
-| 2 | 🟡 | **TotalsService**: Refatorar para usar `IRepository<T>` em vez de `AppDbContext` diretamente (consistência arquitetural) |
+| 1 | � | **E2E tests**: ✅ Implementado — Playwright com 5 fluxos completos (`npm run test:e2e`) |
+| 2 | 🟢 | **TotalsService**: ✅ Refatorado para usar `IRepository<T>` (consistência arquitetural) |
 | 3 | 🟡 | **Testes de Performance**: Adicionar testes de carga para endpoints críticos (ex: `/api/totals` com muitas transações) |
 | 4 | 🟠 | **Testes do Repository**: Adicionar testes unitários para `Repository<T>` |
 | 5 | 🟠 | **Testes de contrato**: Adicionar contrato entre frontend e backend (ex: validação de schema JSON) |
 | 6 | 🟡 | **Mutation testing**: Usar Stryker.NET para validar qualidade dos testes |
-| 7 | 🟡 | **CI Pipeline**: Configurar GitHub Actions ou similar para rodar testes automaticamente em PRs |
+| 7 | 🟢 | **CI Pipeline**: ✅ Implementado — GitHub Actions roda backend + frontend + E2E em push/PR |
 
 ### Resultado
 
 - **Antes (da auditoria):** 66 testes (43 backend + 23 frontend)
 - **Depois (da auditoria):** 86 testes (52 backend + 34 frontend)
-- **Atualmente:** 95 testes (61 backend + 34 frontend)
-- **Aumento:** +29 testes (+44%)
+- **Atualmente:** 91 testes (57 backend + 34 frontend) + 5 E2E (Playwright)
+- **Aumento (desde a auditoria):** +25 testes (+38%) na suite unitária/integração, +5 E2E
 - **Cobertura de validação de entrada:** 0% → 100%
 - **Cobertura de boundary conditions:** 80% → 100%
 - **Cobertura de UI states (loading/error):** 0% → 100%

@@ -61,7 +61,7 @@ public class TransactionServiceTests
         {
             Description = "Salário",
             Amount = 5000m,
-            Type = "receita",
+            Type = TransactionType.Receita,
             PersonId = personId
         };
 
@@ -72,7 +72,7 @@ public class TransactionServiceTests
         Assert.NotNull(result);
         Assert.Equal("Salário", result.Description);
         Assert.Equal(5000m, result.Amount);
-        Assert.Equal("receita", result.Type);
+        Assert.Equal(TransactionType.Receita, result.Type);
     }
 
     [Fact]
@@ -84,7 +84,7 @@ public class TransactionServiceTests
         {
             Description = "Aluguel",
             Amount = 1500m,
-            Type = "despesa",
+            Type = TransactionType.Despesa,
             PersonId = personId
         };
 
@@ -92,7 +92,7 @@ public class TransactionServiceTests
         var result = await service.CreateAsync(dto);
 
         // Assert
-        Assert.Equal("despesa", result.Type);
+        Assert.Equal(TransactionType.Despesa, result.Type);
     }
 
     // ============================================================
@@ -108,7 +108,7 @@ public class TransactionServiceTests
         {
             Description = "Mesada",
             Amount = 100m,
-            Type = "receita",
+            Type = TransactionType.Receita,
             PersonId = personId
         };
 
@@ -126,7 +126,7 @@ public class TransactionServiceTests
         {
             Description = "Lanche",
             Amount = 25.50m,
-            Type = "despesa",
+            Type = TransactionType.Despesa,
             PersonId = personId
         };
 
@@ -135,7 +135,7 @@ public class TransactionServiceTests
 
         // Assert — deve permitir despesa para menor
         Assert.NotNull(result);
-        Assert.Equal("despesa", result.Type);
+        Assert.Equal(TransactionType.Despesa, result.Type);
     }
 
     [Fact]
@@ -154,7 +154,7 @@ public class TransactionServiceTests
         var service = new TransactionService(transactionRepo, personService);
         var dto = new CreateTransactionDto
         {
-            Description = "Freela", Amount = 200m, Type = "receita", PersonId = person.Id
+            Description = "Freela", Amount = 200m, Type = TransactionType.Receita, PersonId = person.Id
         };
 
         // Act & Assert — 17 anos ainda é barrado
@@ -178,7 +178,7 @@ public class TransactionServiceTests
         var service = new TransactionService(transactionRepo, personService);
         var dto = new CreateTransactionDto
         {
-            Description = "Salário", Amount = 2000m, Type = "receita", PersonId = person.Id
+            Description = "Salário", Amount = 2000m, Type = TransactionType.Receita, PersonId = person.Id
         };
 
         // Act — 18 anos deve ser permitido
@@ -186,7 +186,7 @@ public class TransactionServiceTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal("receita", result.Type);
+        Assert.Equal(TransactionType.Receita, result.Type);
     }
 
     // ============================================================
@@ -202,7 +202,7 @@ public class TransactionServiceTests
         var service = new TransactionService(new Repository<Transaction>(context), personService);
         var dto = new CreateTransactionDto
         {
-            Description = "Teste", Amount = 100m, Type = "despesa", PersonId = 999
+            Description = "Teste", Amount = 100m, Type = TransactionType.Despesa, PersonId = 999
         };
 
         // Act & Assert
@@ -242,8 +242,8 @@ public class TransactionServiceTests
         await personRepo.AddAsync(person);
         await personRepo.SaveChangesAsync();
 
-        await transactionRepo.AddAsync(new Transaction { Description = "T1", Amount = 100, Type = "receita", PersonId = person.Id });
-        await transactionRepo.AddAsync(new Transaction { Description = "T2", Amount = 50, Type = "despesa", PersonId = person.Id });
+        await transactionRepo.AddAsync(new Transaction { Description = "T1", Amount = 100, Type = TransactionType.Receita, PersonId = person.Id });
+        await transactionRepo.AddAsync(new Transaction { Description = "T2", Amount = 50, Type = TransactionType.Despesa, PersonId = person.Id });
         await transactionRepo.SaveChangesAsync();
 
         var service = new TransactionService(transactionRepo, personService);
@@ -266,7 +266,7 @@ public class TransactionServiceTests
         var (service, personId) = await SetupAdultAsync();
         var dto = new CreateTransactionDto
         {
-            Description = "Apartamento", Amount = 999_999_999.99m, Type = "despesa", PersonId = personId
+            Description = "Apartamento", Amount = 999_999_999.99m, Type = TransactionType.Despesa, PersonId = personId
         };
 
         // Act
@@ -283,7 +283,7 @@ public class TransactionServiceTests
         var (service, personId) = await SetupAdultAsync();
         var dto = new CreateTransactionDto
         {
-            Description = "Café", Amount = 4.75m, Type = "despesa", PersonId = personId
+            Description = "Café", Amount = 4.75m, Type = TransactionType.Despesa, PersonId = personId
         };
 
         // Act

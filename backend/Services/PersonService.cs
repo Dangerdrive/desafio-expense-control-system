@@ -80,21 +80,6 @@ public class PersonService
     }
 
     /// <summary>
-    /// Busca uma pessoa pelo ID e retorna sua idade.
-    /// Utilizado pelo TransactionService para validar a regra de menor de idade.
-    /// Retorna null se a pessoa não existir.
-    /// 
-    /// Por que este método existe em vez de o TransactionService buscar a pessoa diretamente?
-    /// - Single Responsibility: PersonService é o "dono" dos dados de Person.
-    /// - Se a lógica de "como obter a idade" mudar (ex: calcular a partir da data de nascimento),
-    ///   apenas este método precisa ser alterado.
-    /// </summary>
-    public async Task<int?> GetAgeAsync(int id)
-    {
-        return (await GetInfoAsync(id))?.Age;
-    }
-
-    /// <summary>
     /// Busca nome e idade de uma pessoa pelo ID em uma única consulta.
     /// Utilizado pelo TransactionService para validar a regra de menor de idade
     /// e preencher o nome da pessoa na resposta — evita uma segunda consulta.
@@ -127,13 +112,4 @@ public class PersonService
         Name = p.Name,
         Age = p.Age
     };
-
-    /// <summary>
-    /// Verifica se uma pessoa existe no banco de dados.
-    /// Método de conveniência usado em validações simples.
-    /// </summary>
-    public async Task<bool> ExistsAsync(int id)
-    {
-        return await _repository.GetByIdAsync(id) != null;
-    }
 }

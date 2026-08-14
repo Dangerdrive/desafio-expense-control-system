@@ -224,6 +224,10 @@ public class TransactionsControllerTests : IClassFixture<TestWebApplicationFacto
 
         // Assert
         Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
+        // O TransactionTypeJsonConverter produz uma mensagem clara em PT-BR
+        var body = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>();
+        Assert.NotNull(body);
+        Assert.Contains("O tipo deve ser 'receita' ou 'despesa'.", body!["message"]);
     }
 
     [Fact]

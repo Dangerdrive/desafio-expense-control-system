@@ -8,16 +8,17 @@
 
 | Área | Progresso | Status |
 |------|-----------|--------|
-| Testes unitários (backend) | 32/32 | ✅ Concluído |
+| Testes unitários (backend) | 28/28 | ✅ Concluído |
 | Testes de integração (backend) | 29/29 | ✅ Concluído |
 | Testes API (frontend) | 14/14 | ✅ Concluído |
 | Testes componente (frontend) | 20/20 | ✅ Concluído |
 | Repository Pattern | Implementado | ✅ Concluído |
 | Refatoração Services (IRepository) | Implementado | ✅ Concluído |
 | Documentação (README, SETUP, TESTING, API_REFERENCE) | Criada | ✅ Concluído |
-| Melhorias de código (QA-Level) | 0/5 | 🔜 Pendente |
-| Melhorias de frontend (UX) | 0/5 | 🔜 Pendente |
-| Testes E2E | 0/— | 🔜 Futuro |
+| Melhorias de código (QA-Level) | 5/5 | ✅ Concluído |
+| Melhorias de frontend (UX) | 5/5 | ✅ Concluído |
+| Testes E2E | 5/5 | ✅ Concluído |
+| CI Pipeline (GitHub Actions) | Implementado | ✅ Concluído |
 
 ---
 
@@ -31,13 +32,13 @@ Evoluir o MVP funcional para **qualidade de produção**: testado, robusto, docu
 
 ```
                     ┌──────────────────────────────┐
-                    │         E2E (end-to-end)      │  ← 🔜 Futuro: Playwright
-                    │    Fluxo completo no browser   │
+                    │         E2E (end-to-end)      │  ← ✅ 5 testes (Concluído)
+                    │    Fluxo completo no browser   │     Playwright
                     ├──────────────────────────────┤
                     │   INTEGRATION TESTS           │  ← ✅ 29 testes (Concluído)
                     │   API controllers HTTP        │     WebApplicationFactory
                     ├──────────────────────────────┤
-                    │   UNIT TESTS                  │  ← ✅ 66 testes (Concluído)
+                    │   UNIT TESTS                  │  ← ✅ 62 testes (Concluído)
                     │   Services + API + Comps      │     xUnit + Vitest
                     └──────────────────────────────┘
                               ▲

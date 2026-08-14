@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import * as api from '../api';
-import { formatCurrency } from '../utils/format';
+import { formatCurrency, maskAmountInput, parseAmountInput } from '../utils/format';
+import { getErrorMessage } from '../utils/errors';
 import type { Person, Transaction } from '../types';
 
 /**
@@ -24,7 +25,7 @@ function TransactionsTab() {
     try {
       const [txs, ppl] = await Promise.all([api.getTransactions(), api.getPeople()]);
       setTransactions(txs); setPeople(ppl);
-    } catch { setError('Erro ao carregar dados.'); }
+    } catch (err) { setError(getErrorMessage(err, 'Erro ao carregar dados.')); }
     finally { setLoadingList(false); }
   }, []);
 
@@ -33,10 +34,10 @@ function TransactionsTab() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(''); setSuccess('');
-    const amountNum = parseFloat(amount);
+    const amountNum = parseAmountInput(amount);
     const personIdNum = parseInt(personId);
     if (!description.trim()) { setError('Descrição é obrigatória.'); return; }
-    if (isNaN(amountNum) || amountNum <= 0) { setError('Valor deve ser maior que zero.'); return; }
+    if (amountNum === null) { setError('Valor deve ser maior que zero (use até 2 casas decimais).'); return; }
     if (isNaN(personIdNum)) { setError('Selecione uma pessoa.'); return; }
     setLoading(true);
     try {
@@ -44,7 +45,7 @@ function TransactionsTab() {
       setSuccess('Transação registrada com sucesso!');
       setDescription(''); setAmount(''); setPersonId('');
       await loadData();
-    } catch (err: any) { setError(err.message); }
+    } catch (err) { setError(getErrorMessage(err)); }
     finally { setLoading(false); }
   };
 
@@ -55,7 +56,7 @@ function TransactionsTab() {
       {success && <div className="alert alert-success">{success}</div>}
       <form onSubmit={handleCreate} className="form-row">
         <input type="text" placeholder="Descrição" value={description} onChange={e => setDescription(e.target.value)} className="input" maxLength={200} />
-        <input type="number" placeholder="Valor" value={amount} onChange={e => setAmount(e.target.value)} className="input input-sm" min="0.01" step="0.01" />
+        <input type="text" inputMode="decimal" aria-label="Valor" placeholder="Valor (ex: 12,50)" value={amount} onChange={e => setAmount(maskAmountInput(e.target.value))} className="input input-sm" />
         <select aria-label="Tipo" value={type} onChange={e => setType(e.target.value as 'receita' | 'despesa')} className="input input-sm">
           <option value="despesa">Despesa</option>
           <option value="receita">Receita</option>

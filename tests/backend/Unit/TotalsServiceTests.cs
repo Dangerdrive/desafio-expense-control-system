@@ -63,12 +63,12 @@ public class TotalsServiceTests
         await context.SaveChangesAsync();
 
         // João: R$5000 receita + R$2000 despesa = R$3000 saldo
-        context.Transactions.Add(new Transaction { Description = "Salário", Amount = 5000, Type = "receita", PersonId = joao.Id });
-        context.Transactions.Add(new Transaction { Description = "Aluguel", Amount = 2000, Type = "despesa", PersonId = joao.Id });
+        context.Transactions.Add(new Transaction { Description = "Salário", Amount = 5000, Type = TransactionType.Receita, PersonId = joao.Id });
+        context.Transactions.Add(new Transaction { Description = "Aluguel", Amount = 2000, Type = TransactionType.Despesa, PersonId = joao.Id });
 
         // Maria: R$3000 receita + R$1000 despesa = R$2000 saldo
-        context.Transactions.Add(new Transaction { Description = "Salário", Amount = 3000, Type = "receita", PersonId = maria.Id });
-        context.Transactions.Add(new Transaction { Description = "Contas", Amount = 1000, Type = "despesa", PersonId = maria.Id });
+        context.Transactions.Add(new Transaction { Description = "Salário", Amount = 3000, Type = TransactionType.Receita, PersonId = maria.Id });
+        context.Transactions.Add(new Transaction { Description = "Contas", Amount = 1000, Type = TransactionType.Despesa, PersonId = maria.Id });
 
         await context.SaveChangesAsync();
         var service = new TotalsService(new Repository<Person>(context));
@@ -102,8 +102,8 @@ public class TotalsServiceTests
         context.People.Add(person);
         await context.SaveChangesAsync();
 
-        context.Transactions.Add(new Transaction { Description = "Freela", Amount = 1000, Type = "receita", PersonId = person.Id });
-        context.Transactions.Add(new Transaction { Description = "Cartão", Amount = 3000, Type = "despesa", PersonId = person.Id });
+        context.Transactions.Add(new Transaction { Description = "Freela", Amount = 1000, Type = TransactionType.Receita, PersonId = person.Id });
+        context.Transactions.Add(new Transaction { Description = "Cartão", Amount = 3000, Type = TransactionType.Despesa, PersonId = person.Id });
         await context.SaveChangesAsync();
         var service = new TotalsService(new Repository<Person>(context));
 
@@ -127,7 +127,7 @@ public class TotalsServiceTests
         context.People.Add(person);
         await context.SaveChangesAsync();
 
-        context.Transactions.Add(new Transaction { Description = "Investimento", Amount = 10000, Type = "receita", PersonId = person.Id });
+        context.Transactions.Add(new Transaction { Description = "Investimento", Amount = 10000, Type = TransactionType.Receita, PersonId = person.Id });
         await context.SaveChangesAsync();
         var service = new TotalsService(new Repository<Person>(context));
 
@@ -150,7 +150,7 @@ public class TotalsServiceTests
         context.People.Add(person);
         await context.SaveChangesAsync();
 
-        context.Transactions.Add(new Transaction { Description = "Shopping", Amount = 500, Type = "despesa", PersonId = person.Id });
+        context.Transactions.Add(new Transaction { Description = "Shopping", Amount = 500, Type = TransactionType.Despesa, PersonId = person.Id });
         await context.SaveChangesAsync();
         var service = new TotalsService(new Repository<Person>(context));
 

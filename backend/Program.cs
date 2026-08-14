@@ -11,6 +11,8 @@ var builder = WebApplication.CreateBuilder(args);
 // ============================================
 
 // Registra os controllers (API REST)
+// TransactionType é serializado como "receita"/"despesa" (e não como número)
+// graças ao [JsonConverter] declarado diretamente no enum.
 builder.Services.AddControllers();
 
 // Padroniza o formato de erros de validação: { message }.
@@ -74,11 +76,16 @@ var app = builder.Build();
 // Configuração do pipeline HTTP
 // ============================================
 
-// Garante que o banco de dados e as tabelas sejam criados automaticamente
+// Aplica as migrations EF Core no banco (cria as tabelas na primeira execução
+// e versiona o esquema via tabela __EFMigrationsHistory).
+// Antes usávamos EnsureCreated(), que não evolui o esquema quando o modelo muda.
+// O guard IsRelational() garante que isso não rode em provedores não-relacionais
+// (ex: banco InMemory usado nos testes de integração).
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    dbContext.Database.EnsureCreated();
+    if (dbContext.Database.IsRelational())
+        dbContext.Database.Migrate();
 }
 
 // Tratamento global de exceções — deve ser o primeiro middleware do pipeline

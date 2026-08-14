@@ -56,7 +56,7 @@ public class TransactionService
         // Por que < 18 e não <= 17? Porque a lei considera maioridade
         // a partir dos 18 anos completos. 18 pode; 17 não.
         // ============================================================
-        if (personInfo.Value.Age < 18 && dto.Type == "receita")
+        if (personInfo.Value.Age < 18 && dto.Type == TransactionType.Receita)
             throw new ArgumentException("Menores de 18 anos não podem cadastrar receitas, apenas despesas.");
 
         var transaction = new Transaction

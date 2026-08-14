@@ -29,11 +29,11 @@ public class Transaction
     public decimal Amount { get; set; }
 
     /// <summary>
-    /// Tipo da transação: "receita" (entrada de dinheiro) ou "despesa" (saída de dinheiro).
+    /// Tipo da transação: receita (entrada de dinheiro) ou despesa (saída de dinheiro).
     /// </summary>
     [Required(ErrorMessage = "O tipo é obrigatório.")]
-    [RegularExpression("^(receita|despesa)$", ErrorMessage = "O tipo deve ser 'receita' ou 'despesa'.")]
-    public string Type { get; set; } = string.Empty;
+    [EnumDataType(typeof(TransactionType), ErrorMessage = "O tipo deve ser 'receita' ou 'despesa'.")]
+    public TransactionType Type { get; set; }
 
     /// <summary>
     /// Identificador da pessoa associada a esta transação (chave estrangeira).

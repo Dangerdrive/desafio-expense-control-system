@@ -41,11 +41,11 @@ public class TotalsService
         {
             // Calcula receitas e despesas para cada pessoa
             var totalIncome = person.Transactions
-                .Where(t => t.Type == "receita")
+                .Where(t => t.Type == TransactionType.Receita)
                 .Sum(t => t.Amount);
 
             var totalExpense = person.Transactions
-                .Where(t => t.Type == "despesa")
+                .Where(t => t.Type == TransactionType.Despesa)
                 .Sum(t => t.Amount);
 
             peopleTotals.Add(new PersonTotalsDto

@@ -149,7 +149,7 @@ describe('TransactionsTab', () => {
 
     await waitFor(() => {
       expect(screen.getByPlaceholderText('Descrição')).toBeInTheDocument();
-      expect(screen.getByPlaceholderText('Valor')).toBeInTheDocument();
+      expect(screen.getByLabelText('Valor')).toBeInTheDocument();
     });
   });
 });
@@ -212,7 +212,7 @@ describe('TotalsTab', () => {
     await user.click(screen.getByText('📊 Totais'));
 
     await waitFor(() => {
-      expect(screen.getByText('Erro ao consultar totais.')).toBeInTheDocument();
+      expect(screen.getByText('Falha na rede')).toBeInTheDocument();
     });
   });
 });
@@ -295,7 +295,7 @@ describe('TransactionsTab — form submission', () => {
     });
 
     await user.type(screen.getByPlaceholderText('Descrição'), 'Conta de Luz');
-    await user.type(screen.getByPlaceholderText('Valor'), '200');
+    await user.type(screen.getByLabelText('Valor'), '200');
     await user.selectOptions(screen.getByLabelText('Pessoa'), '1');
     await user.click(screen.getByText('➕ Registrar'));
 
@@ -322,7 +322,7 @@ describe('TransactionsTab — form submission', () => {
     });
 
     await user.type(screen.getByPlaceholderText('Descrição'), 'Mesada');
-    await user.type(screen.getByPlaceholderText('Valor'), '100');
+    await user.type(screen.getByLabelText('Valor'), '100');
     await user.selectOptions(screen.getByLabelText('Tipo'), 'receita');
     await user.selectOptions(screen.getByLabelText('Pessoa'), '1');
     await user.click(screen.getByText('➕ Registrar'));
