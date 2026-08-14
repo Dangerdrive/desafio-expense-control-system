@@ -25,7 +25,7 @@ public class Transaction
     /// Valor da transação. Deve ser maior que zero.
     /// </summary>
     [Required(ErrorMessage = "O valor é obrigatório.")]
-    [Range(0.01, double.MaxValue, ErrorMessage = "O valor deve ser maior que zero.")]
+    [Range(typeof(decimal), "0.01", "79228162514264337593543950335", ErrorMessage = "O valor deve ser maior que zero.")]
     public decimal Amount { get; set; }
 
     /// <summary>

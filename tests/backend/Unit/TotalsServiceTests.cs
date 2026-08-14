@@ -1,3 +1,4 @@
+using Backend.Data;
 using Backend.Models;
 using Backend.Services;
 
@@ -14,7 +15,7 @@ public class TotalsServiceTests
     {
         // Arrange
         using var context = TestDatabase.CreateContext();
-        var service = new TotalsService(context);
+        var service = new TotalsService(new Repository<Person>(context));
 
         // Act
         var result = await service.GetTotalsAsync();
@@ -34,7 +35,7 @@ public class TotalsServiceTests
         context.People.Add(new Person { Name = "Ana", Age = 30 });
         context.People.Add(new Person { Name = "Bruno", Age = 25 });
         await context.SaveChangesAsync();
-        var service = new TotalsService(context);
+        var service = new TotalsService(new Repository<Person>(context));
 
         // Act
         var result = await service.GetTotalsAsync();
@@ -70,7 +71,7 @@ public class TotalsServiceTests
         context.Transactions.Add(new Transaction { Description = "Contas", Amount = 1000, Type = "despesa", PersonId = maria.Id });
 
         await context.SaveChangesAsync();
-        var service = new TotalsService(context);
+        var service = new TotalsService(new Repository<Person>(context));
 
         // Act
         var result = await service.GetTotalsAsync();
@@ -104,7 +105,7 @@ public class TotalsServiceTests
         context.Transactions.Add(new Transaction { Description = "Freela", Amount = 1000, Type = "receita", PersonId = person.Id });
         context.Transactions.Add(new Transaction { Description = "Cartão", Amount = 3000, Type = "despesa", PersonId = person.Id });
         await context.SaveChangesAsync();
-        var service = new TotalsService(context);
+        var service = new TotalsService(new Repository<Person>(context));
 
         // Act
         var result = await service.GetTotalsAsync();
@@ -128,7 +129,7 @@ public class TotalsServiceTests
 
         context.Transactions.Add(new Transaction { Description = "Investimento", Amount = 10000, Type = "receita", PersonId = person.Id });
         await context.SaveChangesAsync();
-        var service = new TotalsService(context);
+        var service = new TotalsService(new Repository<Person>(context));
 
         // Act
         var result = await service.GetTotalsAsync();
@@ -151,7 +152,7 @@ public class TotalsServiceTests
 
         context.Transactions.Add(new Transaction { Description = "Shopping", Amount = 500, Type = "despesa", PersonId = person.Id });
         await context.SaveChangesAsync();
-        var service = new TotalsService(context);
+        var service = new TotalsService(new Repository<Person>(context));
 
         // Act
         var result = await service.GetTotalsAsync();
@@ -171,7 +172,7 @@ public class TotalsServiceTests
         context.People.Add(new Person { Name = "Zebra", Age = 30 });
         context.People.Add(new Person { Name = "Alpha", Age = 25 });
         await context.SaveChangesAsync();
-        var service = new TotalsService(context);
+        var service = new TotalsService(new Repository<Person>(context));
 
         // Act
         var result = await service.GetTotalsAsync();

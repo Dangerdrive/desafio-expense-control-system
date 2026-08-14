@@ -53,6 +53,32 @@ public class PeopleControllerTests : IClassFixture<TestWebApplicationFactory>
     }
 
     [Fact]
+    public async Task Get_WithExistingPerson_ShouldReturn200()
+    {
+        // Arrange — cria uma pessoa e captura o ID
+        var createResponse = await _client.PostAsJsonAsync("/api/people", new { name = "Busca", age = 35 });
+        var created = await createResponse.Content.ReadFromJsonAsync<PersonResponseDto>();
+
+        // Act
+        var response = await _client.GetAsync($"/api/people/{created!.Id}");
+
+        // Assert
+        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+        var person = await response.Content.ReadFromJsonAsync<PersonResponseDto>();
+        Assert.Equal("Busca", person!.Name);
+    }
+
+    [Fact]
+    public async Task Get_WithNonExistingPerson_ShouldReturn404()
+    {
+        // Act
+        var response = await _client.GetAsync("/api/people/99999");
+
+        // Assert
+        Assert.Equal(System.Net.HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
 
     public async Task Delete_WithExistingPerson_ShouldReturn204()
     {
@@ -152,5 +178,22 @@ public class PeopleControllerTests : IClassFixture<TestWebApplicationFactory>
 
         // Assert
         Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Post_ValidationError_ShouldReturnUnifiedMessageShape()
+    {
+        // Arrange — nome vazio viola [Required]
+        var dto = new { name = "", age = 30 };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/people", dto);
+
+        // Assert — corpo padronizado { message }, sem o formato antigo { errors }
+        Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
+        var error = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>();
+        Assert.NotNull(error);
+        Assert.True(error!.ContainsKey("message"));
+        Assert.False(error.ContainsKey("errors"));
     }
 }

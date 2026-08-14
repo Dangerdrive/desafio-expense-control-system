@@ -10,8 +10,9 @@ import type {
   TotalsResponse,
 } from '../types';
 
-// URL base da API — backend roda na porta 5000
-const API_BASE = 'http://localhost:5000/api';
+// URL base da API.
+// Pode ser sobrescrita pela variável de ambiente VITE_API_URL (ex: em produção).
+const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:5000/api';
 
 /**
  * Helper genérico para requisições HTTP.

@@ -1,7 +1,6 @@
 using Backend.Data;
 using Backend.DTOs;
 using Backend.Models;
-using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Services;
 
@@ -44,9 +43,11 @@ public class TransactionService
     {
         // ============================================================
         // Validação 1: Pessoa existe?
+        // Buscamos nome + idade em uma única consulta para também
+        // preencher o PersonName da resposta sem uma segunda query.
         // ============================================================
-        var age = await _personService.GetAgeAsync(dto.PersonId);
-        if (age == null)
+        var personInfo = await _personService.GetInfoAsync(dto.PersonId);
+        if (personInfo == null)
             throw new ArgumentException("A pessoa informada não existe no cadastro.");
 
         // ============================================================
@@ -55,7 +56,7 @@ public class TransactionService
         // Por que < 18 e não <= 17? Porque a lei considera maioridade
         // a partir dos 18 anos completos. 18 pode; 17 não.
         // ============================================================
-        if (age < 18 && dto.Type == "receita")
+        if (personInfo.Value.Age < 18 && dto.Type == "receita")
             throw new ArgumentException("Menores de 18 anos não podem cadastrar receitas, apenas despesas.");
 
         var transaction = new Transaction
@@ -69,12 +70,15 @@ public class TransactionService
         await _repository.AddAsync(transaction);
         await _repository.SaveChangesAsync();
 
-        // Após salvar, o ID é gerado. Buscamos novamente para preencher
-        // o PersonName na resposta (a propriedade de navegação Person
-        // pode não estar carregada após AddAsync).
-        // Em produção, usaríamos .Include(t => t.Person) na query.
-        var saved = await _repository.GetByIdAsync(transaction.Id);
-        return MapToResponse(saved!);
+        return new TransactionResponseDto
+        {
+            Id = transaction.Id,
+            Description = transaction.Description,
+            Amount = transaction.Amount,
+            Type = transaction.Type,
+            PersonId = transaction.PersonId,
+            PersonName = personInfo.Value.Name
+        };
     }
 
     /// <summary>
@@ -83,13 +87,10 @@ public class TransactionService
     /// </summary>
     public async Task<List<TransactionResponseDto>> GetAllAsync()
     {
-        var transactions = await _repository.GetAllAsync();
+        // Inclui a navegação Person para popular o PersonName na resposta.
+        var transactions = await _repository.GetAllAsync(t => t.Person);
 
         // Ordenação da mais recente para a mais antiga.
-        // Nota: como o Repository genérico retorna List<T> (não IQueryable),
-        // a ordenação e o Include precisam ser tratados aqui.
-        // Para um sistema maior, criaríamos um ITransactionRepository
-        // com um método GetAllWithPersonAsync() que faz Include no banco.
         return transactions
             .OrderByDescending(t => t.Id)
             .Select(t => new TransactionResponseDto
@@ -99,23 +100,31 @@ public class TransactionService
                 Amount = t.Amount,
                 Type = t.Type,
                 PersonId = t.PersonId,
-                // ⚠️ Person pode ser null se não foi carregado com Include.
-                // Em produção, isso seria resolvido com um repositório especializado.
                 PersonName = t.Person?.Name ?? "Desconhecida"
             })
             .ToList();
     }
 
     /// <summary>
-    /// Converte uma entidade Transaction para DTO de resposta.
+    /// Busca uma transação pelo ID, preenchendo o nome da pessoa associada.
+    /// Retorna null se a transação não existir.
     /// </summary>
-    private static TransactionResponseDto MapToResponse(Transaction t) => new()
+    public async Task<TransactionResponseDto?> GetByIdAsync(int id)
     {
-        Id = t.Id,
-        Description = t.Description,
-        Amount = t.Amount,
-        Type = t.Type,
-        PersonId = t.PersonId,
-        PersonName = t.Person?.Name ?? "Desconhecida"
-    };
+        var transaction = await _repository.GetByIdAsync(id);
+        if (transaction == null)
+            return null;
+
+        var personInfo = await _personService.GetInfoAsync(transaction.PersonId);
+
+        return new TransactionResponseDto
+        {
+            Id = transaction.Id,
+            Description = transaction.Description,
+            Amount = transaction.Amount,
+            Type = transaction.Type,
+            PersonId = transaction.PersonId,
+            PersonName = personInfo?.Name ?? "Desconhecida"
+        };
+    }
 }

@@ -107,6 +107,37 @@ public class TransactionsControllerTests : IClassFixture<TestWebApplicationFacto
     }
 
     [Fact]
+    public async Task Get_WithExistingTransaction_ShouldReturn200()
+    {
+        // Arrange — cria pessoa + transação e captura o ID
+        var personId = await CreatePersonAsync("Busca Tx", 30);
+        var createResponse = await _client.PostAsJsonAsync("/api/transactions", new
+        {
+            description = "Busca", amount = 100, type = "receita", personId
+        });
+        var created = await createResponse.Content.ReadFromJsonAsync<TransactionResponseDto>();
+
+        // Act
+        var response = await _client.GetAsync($"/api/transactions/{created!.Id}");
+
+        // Assert
+        Assert.Equal(System.Net.HttpStatusCode.OK, response.StatusCode);
+        var transaction = await response.Content.ReadFromJsonAsync<TransactionResponseDto>();
+        Assert.Equal("Busca", transaction!.Description);
+        Assert.Equal("Busca Tx", transaction.PersonName);
+    }
+
+    [Fact]
+    public async Task Get_WithNonExistingTransaction_ShouldReturn404()
+    {
+        // Act
+        var response = await _client.GetAsync("/api/transactions/99999");
+
+        // Assert
+        Assert.Equal(System.Net.HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
     public async Task Post_AdultWithExpense_ShouldReturn201()
     {
         // Arrange
@@ -118,6 +149,49 @@ public class TransactionsControllerTests : IClassFixture<TestWebApplicationFacto
 
         // Assert
         Assert.Equal(System.Net.HttpStatusCode.Created, response.StatusCode);
+    }
+
+    // ============================================================
+    // REGRESSÃO: personName populado corretamente
+    // ============================================================
+
+    [Fact]
+    public async Task Post_ShouldReturnPersonName()
+    {
+        // Arrange
+        var personId = await CreatePersonAsync("João Teste", 30);
+        var dto = new { description = "Salário", amount = 5000, type = "receita", personId };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/transactions", dto);
+
+        // Assert
+        Assert.Equal(System.Net.HttpStatusCode.Created, response.StatusCode);
+        var transaction = await response.Content.ReadFromJsonAsync<TransactionResponseDto>();
+        Assert.Equal("João Teste", transaction!.PersonName);
+    }
+
+    [Fact]
+    public async Task Get_ShouldPopulatePersonName()
+    {
+        // Arrange — descrição única para isolar a transação deste teste
+        var personId = await CreatePersonAsync("Maria Silva", 30);
+        var description = $"Tx_{Guid.NewGuid():N}";
+        await _client.PostAsJsonAsync("/api/transactions", new
+        {
+            description,
+            amount = 150,
+            type = "receita",
+            personId
+        });
+
+        // Act
+        var response = await _client.GetAsync("/api/transactions");
+        var transactions = await response.Content.ReadFromJsonAsync<List<TransactionResponseDto>>();
+
+        // Assert — a transação deve exibir o nome da pessoa (não "Desconhecida")
+        var transaction = Assert.Single(transactions!.Where(t => t.Description == description));
+        Assert.Equal("Maria Silva", transaction.PersonName);
     }
 
     // ============================================================

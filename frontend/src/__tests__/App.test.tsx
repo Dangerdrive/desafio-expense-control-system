@@ -296,6 +296,7 @@ describe('TransactionsTab — form submission', () => {
 
     await user.type(screen.getByPlaceholderText('Descrição'), 'Conta de Luz');
     await user.type(screen.getByPlaceholderText('Valor'), '200');
+    await user.selectOptions(screen.getByLabelText('Pessoa'), '1');
     await user.click(screen.getByText('➕ Registrar'));
 
     await waitFor(() => {
@@ -322,12 +323,12 @@ describe('TransactionsTab — form submission', () => {
 
     await user.type(screen.getByPlaceholderText('Descrição'), 'Mesada');
     await user.type(screen.getByPlaceholderText('Valor'), '100');
+    await user.selectOptions(screen.getByLabelText('Tipo'), 'receita');
+    await user.selectOptions(screen.getByLabelText('Pessoa'), '1');
     await user.click(screen.getByText('➕ Registrar'));
 
     await waitFor(() => {
-      expect(screen.getByText(/Menores de 18 anos/)).toBeInTheDocument();
+      expect(screen.getByText('Menores de 18 anos não podem cadastrar receitas, apenas despesas.')).toBeInTheDocument();
     });
-  });
-});
   });
 });

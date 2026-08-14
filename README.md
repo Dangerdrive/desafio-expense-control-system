@@ -2,8 +2,8 @@
 
 Sistema full-stack para controle de gastos residenciais — cadastro de pessoas, transações financeiras (receitas e despesas) e consulta de totais consolidados.
 
-> **Status do projeto:** ✅ Funcional e testado — **66 testes, 100% passando**.  
-> **Contexto:** Desafio técnico para vaga de Estágio em TI (Maxiprod).  
+> **Status do projeto:** ✅ Funcional e testado — **95 testes (61 backend + 34 frontend), 100% passando**.  
+> **Contexto:** Desafio técnico de desenvolvimento full-stack.  
 > **Especificação original:** [desafio.md](desafio.md)
 
 ---
@@ -194,8 +194,8 @@ desafio-expense-control-system/
 │       │   └── index.ts              ← Interfaces TypeScript (Person, Transaction, Totals, DTOs)
 │       │
 │       └── __tests__/
-│           ├── api.test.ts            ← Testes unitários da camada de API (mock fetch, 10 testes)
-│           └── App.test.tsx           ← Testes de componente React (renderização, navegação, 13 testes)
+│           ├── api.test.ts            ← Testes unitários da camada de API (mock fetch, 14 testes)
+│           └── App.test.tsx           ← Testes de componente React (renderização, navegação, 20 testes)
 │
 └── tests/                             ← Testes automatizados
     └── backend/
@@ -203,12 +203,13 @@ desafio-expense-control-system/
         ├── TestDatabase.cs            ← Helper para criar DbContext em memória
         ├── TestWebApplicationFactory.cs ← Factory para testes de integração
         │
-        ├── Unit/                      ← Testes unitários (27 testes)
+        ├── Unit/                      ← Testes unitários (32 testes)
         │   ├── PersonServiceTests.cs
         │   ├── TransactionServiceTests.cs
-        │   └── TotalsServiceTests.cs
-        │
-        └── Integration/               ← Testes de integração (16 testes)
+        │   ├── TotalsServiceTests.cs
+        │   └── ExceptionHandlingMiddlewareTests.cs
+        │25
+        └── Integration/               ← Testes de integração (29 testes)
             ├── PeopleControllerTests.cs
             ├── TransactionsControllerTests.cs
             └── TotalsControllerTests.cs
@@ -262,9 +263,11 @@ Consulte [SETUP.md](SETUP.md) para:
 |--------|------|-----------|--------|
 | `POST` | `/api/people` | Criar pessoa | `201 Created` |
 | `GET` | `/api/people` | Listar pessoas | `200 OK` |
+| `GET` | `/api/people/{id}` | Buscar pessoa | `200 OK` / `404 Not Found` |
 | `DELETE` | `/api/people/{id}` | Remover pessoa | `204 No Content` / `404 Not Found` |
 | `POST` | `/api/transactions` | Criar transação | `201 Created` / `400 Bad Request` |
 | `GET` | `/api/transactions` | Listar transações | `200 OK` |
+| `GET` | `/api/transactions/{id}` | Buscar transação | `200 OK` / `404 Not Found` |
 | `GET` | `/api/totals` | Consultar totais | `200 OK` |
 
 Consulte [API_REFERENCE.md](API_REFERENCE.md) para documentação detalhada com exemplos de request/response.
@@ -275,11 +278,11 @@ Consulte [API_REFERENCE.md](API_REFERENCE.md) para documentação detalhada com 
 
 | Camada | Framework | Qtde. | Comando |
 |--------|-----------|-------|---------|
-| Backend — Unit | xUnit + EF Core InMemory | 27 | `cd tests/backend && dotnet test --filter "Unit"` |
-| Backend — Integration | WebApplicationFactory | 16 | `cd tests/backend && dotnet test --filter "Integration"` |
-| Frontend — API | Vitest + mock fetch | 10 | `cd frontend && npm test` |
-| Frontend — Component | Vitest + Testing Library | 13 | `cd frontend && npm test` |
-| **TOTAL** | | **66** | |
+| Backend — Unit | xUnit + EF Core InMemory | 32 | `cd tests/backend && dotnet test --filter "Unit"` |
+| Backend — Integration | WebApplicationFactory | 29 | `cd tests/backend && dotnet test --filter "Integration"` |
+| Frontend — API | Vitest + mock fetch | 14 | `cd frontend && npm test` |
+| Frontend — Component | Vitest + Testing Library | 20 | `cd frontend && npm test` |
+| **TOTAL** | | **95** | |
 
 ```bash
 # Executar tudo de uma vez
@@ -296,7 +299,7 @@ Consulte [TESTING.md](TESTING.md) para a documentação completa da suite de tes
 |-----------|----------|
 | [SETUP.md](SETUP.md) | Guia de instalação, configuração e troubleshooting |
 | [API_REFERENCE.md](API_REFERENCE.md) | Referência completa dos endpoints REST |
-| [TESTING.md](TESTING.md) | Documentação da suite de 66 testes |
+| [TESTING.md](TESTING.md) | Documentação da suite de 95 testes |
 | [IMPROVEMENTS.md](IMPROVEMENTS.md) | Plano de melhorias com priorização |
 | [desafio.md](desafio.md) | Especificação original do desafio técnico |
 
@@ -361,7 +364,9 @@ Strings são auto-descritivas em JSON e evitam problemas de serialização/desse
 |--------|------|-----------|
 | `POST` | `/api/people` | Criar pessoa |
 | `GET` | `/api/people` | Listar pessoas |
+| `GET` | `/api/people/{id}` | Buscar pessoa |
 | `DELETE` | `/api/people/{id}` | Remover pessoa (cascata) |
 | `POST` | `/api/transactions` | Criar transação |
 | `GET` | `/api/transactions` | Listar transações |
+| `GET` | `/api/transactions/{id}` | Buscar transação |
 | `GET` | `/api/totals` | Consultar totais |

@@ -35,7 +35,7 @@ public class TransactionsController : ControllerBase
         try
         {
             var transaction = await _service.CreateAsync(dto);
-            return CreatedAtAction(nameof(GetAll), new { id = transaction.Id }, transaction);
+            return CreatedAtAction(nameof(GetById), new { id = transaction.Id }, transaction);
         }
         catch (ArgumentException ex)
         {
@@ -51,5 +51,20 @@ public class TransactionsController : ControllerBase
     {
         var transactions = await _service.GetAllAsync();
         return Ok(transactions);
+    }
+
+    /// <summary>
+    /// Busca uma transação pelo ID.
+    /// </summary>
+    /// <param name="id">Identificador da transação.</param>
+    /// <returns>200 com a transação; 404 se não encontrada.</returns>
+    [HttpGet("{id}")]
+    public async Task<ActionResult<TransactionResponseDto>> GetById(int id)
+    {
+        var transaction = await _service.GetByIdAsync(id);
+        if (transaction == null)
+            return NotFound(new { message = "Transação não encontrada." });
+
+        return Ok(transaction);
     }
 }

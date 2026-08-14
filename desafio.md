@@ -1,5 +1,4 @@
-A fim de te conhecermos um pouco mais desenvolvemos um desafio prático. As instruções necessárias para o seu prosseguimento estarão descritas a seguir.
-Desejamos sucesso na realização do desafio!
+
 Objetivo:
 Implementar um sistema de controle de gastos residenciais com:
 
@@ -59,33 +58,4 @@ Aderência às regras de negócio;
 Atenção aos detalhes;
 Qualidade e legibilidade do código;
 Boas práticas.
-Formato:
-Você deve subir o código-fonte da sua solução para um repositório git e nos envie o link do repositório, seguindo as instruções fornecidas nesse desafio.
 
-IMPORTANTE:
-
-Certifique-se de que teremos acesso ao seu repositório, sendo importante que ele esteja público.
-Solicitamos gentilmente que qualquer referência à Maxiprod seja removida de todos os arquivos antes da publicação.
-Caso se sinta à vontade, você pode implementar recursos adicionais desde que os mesmos não afetem o funcionamento dos já especificados nesse documento.
-
-
-Dúvidas: Caso tenha alguma dúvida, envie um e-mail para rh@maxiprod.com.br com o título "Dúvida teste técnico Desenvolvimento".
-
-
-
-Organização da entrega
-Para facilitar a entrega do desafio:
-
-1. Certifique-se que resolveu todo o desafio técnico;
-
-2. Verifique se seguiu as instruções para envio do Teste técnico;
-
-3. Suba o código-fonte final da sua solução para um repositório git.
-
-4. Envie o link do repositório, no campo abaixo, reforçamos que o repositório precisa estar público.
-
-Esta é a única forma de assegurar que iremos ter acesso ao seu teste técnico para análise.
-
-
-
-Após finalizar a entrega, basta aguardar o contato da nossa equipe com um retorno sobre o processo seletivo.

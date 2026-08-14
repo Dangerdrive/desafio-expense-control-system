@@ -91,8 +91,29 @@ public class PersonService
     /// </summary>
     public async Task<int?> GetAgeAsync(int id)
     {
+        return (await GetInfoAsync(id))?.Age;
+    }
+
+    /// <summary>
+    /// Busca nome e idade de uma pessoa pelo ID em uma única consulta.
+    /// Utilizado pelo TransactionService para validar a regra de menor de idade
+    /// e preencher o nome da pessoa na resposta — evita uma segunda consulta.
+    /// Retorna null se a pessoa não existir.
+    /// </summary>
+    public async Task<(string Name, int Age)?> GetInfoAsync(int id)
+    {
         var person = await _repository.GetByIdAsync(id);
-        return person?.Age;
+        return person == null ? null : (person.Name, person.Age);
+    }
+
+    /// <summary>
+    /// Busca uma pessoa pelo ID e a devolve como DTO de resposta.
+    /// Retorna null se a pessoa não existir.
+    /// </summary>
+    public async Task<PersonResponseDto?> GetByIdAsync(int id)
+    {
+        var person = await _repository.GetByIdAsync(id);
+        return person == null ? null : MapToResponse(person);
     }
 
     /// <summary>

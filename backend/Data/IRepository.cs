@@ -1,3 +1,5 @@
+using System.Linq.Expressions;
+
 namespace Backend.Data;
 
 /// <summary>
@@ -21,10 +23,10 @@ public interface IRepository<T> where T : class
     Task<T?> GetByIdAsync(int id);
 
     /// <summary>
-    /// Lista todas as entidades, ordenadas por ID decrescente (mais recentes primeiro).
+    /// Lista todas as entidades.
     /// O parâmetro opcional permite incluir navegações (ex: Transaction.Person).
     /// </summary>
-    Task<List<T>> GetAllAsync();
+    Task<List<T>> GetAllAsync(params Expression<Func<T, object>>[] includes);
 
     /// <summary>
     /// Adiciona uma nova entidade ao contexto.

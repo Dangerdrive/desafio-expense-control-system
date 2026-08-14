@@ -1,6 +1,6 @@
 using Backend.Data;
 using Backend.DTOs;
-using Microsoft.EntityFrameworkCore;
+using Backend.Models;
 
 namespace Backend.Services;
 
@@ -10,11 +10,11 @@ namespace Backend.Services;
 /// </summary>
 public class TotalsService
 {
-    private readonly AppDbContext _context;
+    private readonly IRepository<Person> _repository;
 
-    public TotalsService(AppDbContext context)
+    public TotalsService(IRepository<Person> repository)
     {
-        _context = context;
+        _repository = repository;
     }
 
     /// <summary>
@@ -32,15 +32,12 @@ public class TotalsService
     /// <returns>DTO com os totais por pessoa e o total geral.</returns>
     public async Task<TotalsResponseDto> GetTotalsAsync()
     {
-        // Busca todas as pessoas com suas transações
-        var people = await _context.People
-            .Include(p => p.Transactions)
-            .OrderBy(p => p.Name)
-            .ToListAsync();
+        // Busca todas as pessoas com suas transações (Include via repositório).
+        var people = await _repository.GetAllAsync(p => p.Transactions);
 
         var peopleTotals = new List<PersonTotalsDto>();
 
-        foreach (var person in people)
+        foreach (var person in people.OrderBy(p => p.Name))
         {
             // Calcula receitas e despesas para cada pessoa
             var totalIncome = person.Transactions

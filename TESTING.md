@@ -1,6 +1,6 @@
 # 🧪 Documentação de Testes — Expense Control System
 
-> **Status:** ✅ Suite completa com **86 testes** (52 backend + 34 frontend), todos passando.
+> **Status:** ✅ Suite completa com **95 testes** (61 backend + 34 frontend), todos passando.
 
 ---
 
@@ -8,11 +8,11 @@
 
 | Camada | Framework | Tipo | Quantidade | Status |
 |--------|-----------|------|-----------|--------|
-| Backend — Unit | xUnit + EF Core InMemory | Serviços | 28 | ✅ 28/28 |
-| Backend — Integration | xUnit + WebApplicationFactory | Controllers HTTP | 24 | ✅ 24/24 |
+| Backend — Unit | xUnit + EF Core InMemory | Serviços + Middleware | 32 | ✅ 32/32 |
+| Backend — Integration | xUnit + WebApplicationFactory | Controllers HTTP | 29 | ✅ 29/29 |
 | Frontend — Unit | Vitest + mock fetch | API layer | 14 | ✅ 14/14 |
 | Frontend — Component | Vitest + Testing Library | React components | 20 | ✅ 20/20 |
-| **TOTAL** | | | **86** | **✅ 86/86** |
+| **TOTAL** | | | **95** | **✅ 95/95** |
 
 ---
 
@@ -42,7 +42,7 @@ npx vitest run --reporter=verbose    # Output detalhado
 
 ## 📋 Backend — Testes Unitários
 
-### PersonServiceTests (13 testes)
+### PersonServiceTests (12 testes)
 
 | # | Teste | Cenário |
 |---|-------|---------|
@@ -58,10 +58,9 @@ npx vitest run --reporter=verbose    # Output detalhado
 | 10 | `ExistsAsync_WithNonExistingPerson` | Pessoa não existe → false |
 | 11 | `GetAgeAsync_WithExistingPerson` | Retorna idade correta |
 | 12 | `GetAgeAsync_WithNonExistingPerson` | Retorna null para pessoa inexistente |
-| 13 | (implícito via cascata) | Transações removidas após delete da pessoa |
 
 ### TransactionServiceTests (12 testes)
-
+1
 | # | Teste | Cenário | Regra de Negócio |
 |---|-------|---------|-----------------|
 | 1 | `CreateAsync_AdultWithIncome` | Adulto + receita | ✅ Permitido |
@@ -75,7 +74,6 @@ npx vitest run --reporter=verbose    # Output detalhado
 | 9 | `GetAllAsync_WithMultipleTransactions` | Lista com dados | — |
 | 10 | `CreateAsync_WithVeryLargeAmount` | Valor máximo (R$999M) | ✅ Edge case |
 | 11 | `CreateAsync_WithDecimalPrecision` | Centavos preservados | ✅ Precisão |
-| 12 | (implícito) | Validação de tipo (receita/despesa) | — |
 
 ### TotalsServiceTests (7 testes)
 
@@ -91,23 +89,35 @@ npx vitest run --reporter=verbose    # Output detalhado
 
 ---
 
+### ExceptionHandlingMiddlewareTests (2 testes)
+
+| # | Teste | Cenário |
+|---|-------|---------|
+| 1 | `InvokeAsync_WhenNextThrows_ShouldReturn500WithUnifiedMessage` | Exceção não tratada → 500 `{ message }` |
+| 2 | `InvokeAsync_WhenNextSucceeds_ShouldNotInterfere` | Resposta de sucesso não é alterada |
+
+---
+
 ## 📋 Backend — Testes de Integração
 
-### PeopleControllerTests (9 testes HTTP)
+### PeopleControllerTests (12 testes HTTP)
 
 | # | Teste | Verbo | Status Esperado |
 |---|-------|-------|----------------|
 | 1 | `Post_WithValidData` | POST | 201 Created |
 | 2 | `Get_WithPeople` | GET | 200 + lista |
-| 3 | `Delete_WithExistingPerson` | DELETE | 204 No Content |
-| 4 | `Delete_WithNonExistingPerson` | DELETE | 404 Not Found |
-| 5 | `Delete_ShouldRemoveAssociatedTransactions` | DELETE | 204 + transações removidas (cascata) |
-| 6 | `Post_WithEmptyName` | POST | 400 Bad Request |
-| 7 | `Post_WithNegativeAge` | POST | 400 Bad Request |
-| 8 | `Post_WithAgeAbove150` | POST | 400 Bad Request |
-| 9 | `Post_WithNameTooLong` | POST | 400 Bad Request |
+| 3 | `Get_WithExistingPerson_ShouldReturn200` | GET | 200 + pessoa |
+| 4 | `Get_WithNonExistingPerson_ShouldReturn404` | GET | 404 Not Found |
+| 5 | `Delete_WithExistingPerson` | DELETE | 204 No Content |
+| 6 | `Delete_WithNonExistingPerson` | DELETE | 404 Not Found |
+| 7 | `Delete_ShouldRemoveAssociatedTransactions` | DELETE | 204 + transações removidas (cascata) |
+| 8 | `Post_WithEmptyName` | POST | 400 Bad Request |
+| 9 | `Post_WithNegativeAge` | POST | 400 Bad Request |
+| 10 | `Post_WithAgeAbove150` | POST | 400 Bad Request |
+| 11 | `Post_WithNameTooLong` | POST | 400 Bad Request |
+| 12 | `Post_ValidationError_ShouldReturnUnifiedMessageShape` | POST | 400 + `{ message }` (sem `errors`) |
 
-### TransactionsControllerTests (10 testes HTTP)
+### TransactionsControllerTests (14 testes HTTP)
 
 | # | Teste | Verbo | Status | Regra |
 |---|-------|-------|--------|-------|
@@ -121,16 +131,18 @@ npx vitest run --reporter=verbose    # Output detalhado
 | 8 | `Post_WithInvalidType` | POST | 400 | ❌ Tipo inválido |
 | 9 | `Post_WithEmptyDescription` | POST | 400 | ❌ Descrição vazia |
 | 10 | `Post_WithDescriptionTooLong` | POST | 400 | ❌ Descrição > 200 chars |
+| 11 | `Post_ShouldReturnPersonName` | POST | 201 | ✅ `personName` preenchido |
+| 12 | `Get_ShouldPopulatePersonName` | GET | 200 | ✅ `personName` preenchido |
+| 13 | `Get_WithExistingTransaction_ShouldReturn200` | GET | 200 | ✅ |
+| 14 | `Get_WithNonExistingTransaction_ShouldReturn404` | GET | 404 | ❌ |
 
-### TotalsControllerTests (5 testes HTTP)
+### TotalsControllerTests (3 testes HTTP)
 
 | # | Teste | Verbo | Status | Validação |
 |---|-------|-------|--------|-----------|
 | 1 | `Get_ShouldReturn200WithValidStructure` | GET | 200 | Estrutura do JSON |
 | 2 | `Get_WithFullData` | GET | 200 | Cálculos corretos |
 | 3 | `Get_ResponseStructure` | GET | 200 | Campos obrigatórios |
-| 4 | (implícito) | — | — | Consistência saldo = receita - despesa |
-| 5 | (implícito) | — | — | Ordenação por nome |
 
 ---
 
@@ -197,11 +209,11 @@ npx vitest run --reporter=verbose    # Output detalhado
 │                    │ (0 tests)│                      │
 │                   ─┴──────────┴─                     │
 │                 ┌────────────────┐                   │
-│                 │  Integration   │  ← 27 tests       │
+│                 │  Integration   │  ← 29 tests       │
 │                 │  (Controllers) │     WebAppFactory │
 │                ─┴────────────────┴─                  │
 │          ┌─────────────────────────────┐             │
-│          │       Unit Tests            │  ← 60 tests │
+│          │       Unit Tests            │  ← 66 tests │
 │          │  (Services + API + Comps)   │             │
 │          └─────────────────────────────┘             │
 │                                                      │
@@ -222,7 +234,7 @@ npx vitest run --reporter=verbose    # Output detalhado
 | Totais: receita - despesa = saldo | `TotalsServiceTests` #3-6 | `TotalsControllerTests` #2 | ✅ 100% |
 | Validação de entrada (DTOs) | — | `PeopleControllerTests` #6-9, `TransactionsControllerTests` #7-10 | ✅ 100% |
 
----
+---10
 
 ## 📁 Estrutura de arquivos de teste
 
@@ -235,13 +247,14 @@ expense-control-system/
 │       ├── TestDatabase.cs             # Fixture InMemory (unit)
 │       ├── TestWebApplicationFactory.cs # Factory p/ integração
 │       ├── Unit/
-│       │   ├── PersonServiceTests.cs   # 13 testes
-│       │   ├── TransactionServiceTests.cs # 12 testes
-│       │   └── TotalsServiceTests.cs   # 7 testes
+│       │   ├── PersonServiceTests.cs   # 12 testes
+│       │   ├── TransactionServiceTests.cs # 11 testes
+│       │   ├── TotalsServiceTests.cs   # 7 testes
+│       │   └── ExceptionHandlingMiddlewareTests.cs # 2 testes
 │       └── Integration/
-│           ├── PeopleControllerTests.cs    # 9 testes
-│           ├── TransactionsControllerTests.cs # 10 testes
-│           └── TotalsControllerTests.cs    # 5 testes
+│           ├── PeopleControllerTests.cs    # 12 testes
+│           ├── TransactionsControllerTests.cs # 14 testes
+│           └── TotalsControllerTests.cs    # 3 testes
 └── frontend/
     ├── vite.config.ts                 # Config Vitest + coverage thresholds
     └── src/
@@ -321,9 +334,10 @@ Auditoria de qualidade realizada para identificar gaps e melhorias.
 
 ### Resultado
 
-- **Antes:** 66 testes (43 backend + 23 frontend)
-- **Depois:** 86 testes (52 backend + 34 frontend)
-- **Aumento:** +20 testes (+30%)
+- **Antes (da auditoria):** 66 testes (43 backend + 23 frontend)
+- **Depois (da auditoria):** 86 testes (52 backend + 34 frontend)
+- **Atualmente:** 95 testes (61 backend + 34 frontend)
+- **Aumento:** +29 testes (+44%)
 - **Cobertura de validação de entrada:** 0% → 100%
 - **Cobertura de boundary conditions:** 80% → 100%
 - **Cobertura de UI states (loading/error):** 0% → 100%

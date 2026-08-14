@@ -8,10 +8,10 @@
 
 | Área | Progresso | Status |
 |------|-----------|--------|
-| Testes unitários (backend) | 27/27 | ✅ Concluído |
-| Testes de integração (backend) | 16/16 | ✅ Concluído |
-| Testes API (frontend) | 10/10 | ✅ Concluído |
-| Testes componente (frontend) | 13/13 | ✅ Concluído |
+| Testes unitários (backend) | 32/32 | ✅ Concluído |
+| Testes de integração (backend) | 29/29 | ✅ Concluído |
+| Testes API (frontend) | 14/14 | ✅ Concluído |
+| Testes componente (frontend) | 20/20 | ✅ Concluído |
 | Repository Pattern | Implementado | ✅ Concluído |
 | Refatoração Services (IRepository) | Implementado | ✅ Concluído |
 | Documentação (README, SETUP, TESTING, API_REFERENCE) | Criada | ✅ Concluído |
@@ -34,10 +34,10 @@ Evoluir o MVP funcional para **qualidade de produção**: testado, robusto, docu
                     │         E2E (end-to-end)      │  ← 🔜 Futuro: Playwright
                     │    Fluxo completo no browser   │
                     ├──────────────────────────────┤
-                    │   INTEGRATION TESTS           │  ← ✅ 16 testes (Concluído)
+                    │   INTEGRATION TESTS           │  ← ✅ 29 testes (Concluído)
                     │   API controllers HTTP        │     WebApplicationFactory
                     ├──────────────────────────────┤
-                    │   UNIT TESTS                  │  ← ✅ 50 testes (Concluído)
+                    │   UNIT TESTS                  │  ← ✅ 66 testes (Concluído)
                     │   Services + API + Comps      │     xUnit + Vitest
                     └──────────────────────────────┘
                               ▲
@@ -51,9 +51,10 @@ Evoluir o MVP funcional para **qualidade de produção**: testado, robusto, docu
 
 | Serviço | Cenários de teste | Qtde. | Status |
 |---------|------------------|-------|--------|
-| `PersonService` | Criar, listar vazio, listar com dados, deletar existente/inexistente, cascata, verificar existência, obter idade | 13 | ✅ |
+| `PersonService` | Criar, listar vazio, listar com dados, deletar existente/inexistente, cascata, verificar existência, obter idade | 12 | ✅ |
 | `TransactionService` | Adulto receita/despesa, menor receita/despesa, boundary 17 anos, pessoa inexistente, valor grande, precisão decimal | 11 | ✅ |
 | `TotalsService` | Sem pessoas, sem transações, cenário completo, saldo negativo, só receitas, só despesas, ordenação | 7 | ✅ |
+| `ExceptionHandlingMiddleware` | Exceção não tratada → 500 padronizado, resposta de sucesso não alterada | 2 | ✅ |
 
 **Ferramentas:** xUnit + EF Core InMemory
 
@@ -63,9 +64,9 @@ Evoluir o MVP funcional para **qualidade de produção**: testado, robusto, docu
 
 | Controller | Cenários | Qtde. | Status |
 |-----------|----------|-------|--------|
-| `PeopleController` | POST 201, GET 200, DELETE 204, DELETE 404, cascata | 5 | ✅ |
-| `TransactionsController` | Adulto receita, menor receita→400, menor despesa, pessoa inválida, adulto despesa, GET 200 | 6 | ✅ |
-| `TotalsController` | Estrutura JSON, cálculos corretos, campos obrigatórios | 5 | ✅ |
+| `PeopleController` | POST 201, GET 200, GET por ID, DELETE 204/404, cascata, validações, erro unificado | 12 | ✅ |
+| `TransactionsController` | Adulto receita, menor receita→400, menor despesa, pessoa inválida, GET 200, GET por ID, personName | 14 | ✅ |
+| `TotalsController` | Estrutura JSON, cálculos corretos, campos obrigatórios | 3 | ✅ |
 
 **Ferramentas:** `WebApplicationFactory` + xUnit
 
@@ -75,8 +76,8 @@ Evoluir o MVP funcional para **qualidade de produção**: testado, robusto, docu
 
 | Alvo | Cenários | Qtde. | Status |
 |------|----------|-------|--------|
-| `api/index.ts` | Sucesso, erro 400, erro 500, 204 No Content, regra de menor | 10 | ✅ |
-| Componentes React | Renderização, navegação entre abas, formulários, estados vazios | 13 | ✅ |
+| `api/index.ts` | Sucesso, erro 400, erro 500, 204 No Content, regra de menor, network failures | 14 | ✅ |
+| Componentes React | Renderização, navegação entre abas, formulários, estados vazios, loading/erro | 20 | ✅ |
 
 **Ferramentas:** Vitest + Testing Library + mock fetch
 
@@ -121,7 +122,7 @@ Evoluir o MVP funcional para **qualidade de produção**: testado, robusto, docu
 |---------|------|-------|
 | Cobertura de testes unitários (backend) | > 85% | ✅ 100% das regras cobertas |
 | Cobertura de testes unitários (frontend) | > 70% | ✅ API + componentes cobertos |
-| Testes de integração passando | 100% | ✅ 16/16 |
+| Testes de integração passando | 100% | ✅ 29/29 |
 | Regras de negócio cobertas por teste | 100% | ✅ 4/4 regras |
 | Build sem warnings | 0 warnings | ✅ Backend + Frontend |
 | Documentação atualizada | Completa | ✅ 5 documentos |

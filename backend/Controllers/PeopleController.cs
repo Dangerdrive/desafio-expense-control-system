@@ -28,7 +28,7 @@ public class PeopleController : ControllerBase
     public async Task<ActionResult<PersonResponseDto>> Create([FromBody] CreatePersonDto dto)
     {
         var person = await _service.CreateAsync(dto);
-        return CreatedAtAction(nameof(GetAll), new { id = person.Id }, person);
+        return CreatedAtAction(nameof(GetById), new { id = person.Id }, person);
     }
 
     /// <summary>
@@ -39,6 +39,21 @@ public class PeopleController : ControllerBase
     {
         var people = await _service.GetAllAsync();
         return Ok(people);
+    }
+
+    /// <summary>
+    /// Busca uma pessoa pelo ID.
+    /// </summary>
+    /// <param name="id">Identificador da pessoa.</param>
+    /// <returns>200 com a pessoa; 404 se não encontrada.</returns>
+    [HttpGet("{id}")]
+    public async Task<ActionResult<PersonResponseDto>> GetById(int id)
+    {
+        var person = await _service.GetByIdAsync(id);
+        if (person == null)
+            return NotFound(new { message = "Pessoa não encontrada." });
+
+        return Ok(person);
     }
 
     /// <summary>

@@ -117,6 +117,38 @@ curl http://localhost:5000/api/people
 
 ---
 
+### Buscar pessoa
+
+Retorna uma pessoa pelo ID.
+
+```http
+GET /api/people/{id}
+```
+
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `id` | `int` (path) | Identificador da pessoa |
+
+**Response `200 OK`:**
+
+```json
+{ "id": 1, "name": "João Silva", "age": 30 }
+```
+
+**Response `404 Not Found`:**
+
+```json
+{ "message": "Pessoa não encontrada." }
+```
+
+**Exemplo curl:**
+
+```bash
+curl http://localhost:5000/api/people/1
+```
+
+---
+
 ### Remover pessoa
 
 Remove uma pessoa pelo ID. **Todas as transações associadas são removidas em cascata.**
@@ -267,6 +299,45 @@ GET /api/transactions
 
 ```bash
 curl http://localhost:5000/api/transactions
+```
+
+---
+
+### Buscar transação
+
+Retorna uma transação pelo ID.
+
+```http
+GET /api/transactions/{id}
+```
+
+| Parâmetro | Tipo | Descrição |
+|-----------|------|-----------|
+| `id` | `int` (path) | Identificador da transação |
+
+**Response `200 OK`:**
+
+```json
+{
+  "id": 1,
+  "description": "Salário",
+  "amount": 5000.00,
+  "type": "receita",
+  "personId": 1,
+  "personName": "João Silva"
+}
+```
+
+**Response `404 Not Found`:**
+
+```json
+{ "message": "Transação não encontrada." }
+```
+
+**Exemplo curl:**
+
+```bash
+curl http://localhost:5000/api/transactions/1
 ```
 
 ---
