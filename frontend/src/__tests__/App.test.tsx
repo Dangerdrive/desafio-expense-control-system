@@ -105,6 +105,24 @@ describe('App', () => {
       expect(screen.getByText('Consulta de Totais')).toBeInTheDocument();
     });
   });
+
+  it('should switch back to the People tab and mark it as active', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('📊 Totais'));
+    await waitFor(() => {
+      expect(screen.getByText('Consulta de Totais')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText('👥 Pessoas'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Cadastro de Pessoas')).toBeInTheDocument();
+    });
+    expect(screen.getByText('👥 Pessoas')).toHaveClass('active');
+    expect(screen.getByText('📊 Totais')).not.toHaveClass('active');
+  });
 });
 
 // ============================================================
