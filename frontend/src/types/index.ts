@@ -16,13 +16,16 @@ export interface CreatePersonDto {
   age: number;
 }
 
+/** Tipo de transação financeira. */
+export type TransactionType = 'receita' | 'despesa';
+
 /** Dados de uma transação. */
 export interface Transaction {
   id: number;
   description: string;
   amount: number;
   date: string; // formato ISO "YYYY-MM-DD"
-  type: 'receita' | 'despesa';
+  type: TransactionType;
   personId: number;
   personName: string;
 }
@@ -32,7 +35,7 @@ export interface CreateTransactionDto {
   description: string;
   amount: number;
   date: string; // formato ISO "YYYY-MM-DD"
-  type: 'receita' | 'despesa';
+  type: TransactionType;
   personId: number;
 }
 

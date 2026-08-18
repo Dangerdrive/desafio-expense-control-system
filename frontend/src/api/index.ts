@@ -15,6 +15,16 @@ import type {
 // Pode ser sobrescrita pela variável de ambiente VITE_API_URL (ex: em produção).
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:5000/api';
 
+/** Monta uma query string ignorando valores vazios ou falsy. */
+function buildQueryString(params: Record<string, string | number | undefined>): string {
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value) query.set(key, String(value));
+  }
+  const qs = query.toString();
+  return qs ? `?${qs}` : '';
+}
+
 /**
  * Helper genérico para requisições HTTP.
  * Lança erro com a mensagem do backend em caso de falha.
@@ -57,11 +67,10 @@ export interface PersonQuery {
  * Padrão: página 1, 10 itens por página.
  */
 export function getPeople(params?: PersonQuery): Promise<PagedResult<Person>> {
-  const query = new URLSearchParams();
-  if (params?.page) query.set('page', String(params.page));
-  if (params?.pageSize) query.set('pageSize', String(params.pageSize));
-  const qs = query.toString();
-  return request<PagedResult<Person>>(`/people${qs ? `?${qs}` : ''}`);
+  return request<PagedResult<Person>>(`/people${buildQueryString({
+    page: params?.page,
+    pageSize: params?.pageSize,
+  })}`);
 }
 
 /** Cria uma nova pessoa. */
@@ -93,14 +102,13 @@ export interface TransactionQuery {
  * Padrão: página 1, 10 itens por página, ordenação por data decrescente.
  */
 export function getTransactions(params?: TransactionQuery): Promise<PagedResult<Transaction>> {
-  const query = new URLSearchParams();
-  if (params?.from) query.set('from', params.from);
-  if (params?.to) query.set('to', params.to);
-  if (params?.sort) query.set('sort', params.sort);
-  if (params?.page) query.set('page', String(params.page));
-  if (params?.pageSize) query.set('pageSize', String(params.pageSize));
-  const qs = query.toString();
-  return request<PagedResult<Transaction>>(`/transactions${qs ? `?${qs}` : ''}`);
+  return request<PagedResult<Transaction>>(`/transactions${buildQueryString({
+    from: params?.from,
+    to: params?.to,
+    sort: params?.sort,
+    page: params?.page,
+    pageSize: params?.pageSize,
+  })}`);
 }
 
 /** Cria uma nova transação. Aplica regra: <18 anos só despesa. */

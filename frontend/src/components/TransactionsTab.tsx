@@ -2,22 +2,15 @@ import { useState, useEffect, useCallback } from 'react';
 import * as api from '../api';
 import ConfirmDialog from './ConfirmDialog';
 import Pagination from './Pagination';
-import { formatCurrency, formatDate, maskAmountInput, parseAmountInput } from '../utils/format';
+import { formatCurrency, formatDate, maskAmountInput, parseAmountInput, todayISO } from '../utils/format';
 import { getErrorMessage } from '../utils/errors';
-import type { Person, Transaction } from '../types';
+import { usePagedList } from '../hooks/usePagedList';
+import type { Person, Transaction, TransactionType } from '../types';
 
 /** Quantidade de transações por página na listagem. */
 const PAGE_SIZE = 10;
 /** Tamanho de página usado para carregar todas as pessoas no seletor. */
 const PEOPLE_PAGE_SIZE = 100;
-
-/** Retorna a data de hoje no formato ISO "YYYY-MM-DD" (local). */
-function todayISO(): string {
-  const d = new Date();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${d.getFullYear()}-${m}-${day}`;
-}
 
 /**
  * Aba de cadastro de transações: criação e listagem (receitas/despesas),
@@ -25,15 +18,12 @@ function todayISO(): string {
  * Regra de negócio: menores de 18 anos só podem ter despesas (validada no backend).
  */
 function TransactionsTab() {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const { items: transactions, page, setPage, totalPages, totalItems, applyPagedResult, getPageAfterRemoval } = usePagedList<Transaction>();
   const [people, setPeople] = useState<Person[]>([]);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalItems, setTotalItems] = useState(0);
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(todayISO());
-  const [type, setType] = useState<'receita' | 'despesa'>('despesa');
+  const [type, setType] = useState<TransactionType>('despesa');
   const [personId, setPersonId] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -55,14 +45,11 @@ function TransactionsTab() {
         // Seletor de pessoas precisa de TODAS (não paginado)
         api.getPeople({ page: 1, pageSize: PEOPLE_PAGE_SIZE }),
       ]);
-      setTransactions(txs.items);
-      setPage(txs.page);
-      setTotalPages(txs.totalPages);
-      setTotalItems(txs.totalItems);
+      applyPagedResult(txs);
       setPeople(ppl.items);
     } catch (err) { setError(getErrorMessage(err, 'Erro ao carregar dados.')); }
     finally { setLoadingList(false); }
-  }, [from, to, sort, page]);
+  }, [from, to, sort, page, applyPagedResult]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
@@ -120,7 +107,7 @@ function TransactionsTab() {
       await api.deleteTransaction(tx.id);
       setSuccess(`Transação "${tx.description}" removida.`);
       // Se a página ficou vazia após a remoção, volta uma página
-      const target = transactions.length === 1 && page > 1 ? page - 1 : page;
+      const target = getPageAfterRemoval(transactions.length);
       await loadData(target);
     } catch (err) { setError(getErrorMessage(err)); }
   };
@@ -134,7 +121,7 @@ function TransactionsTab() {
         <input type="text" placeholder="Descrição" value={description} onChange={e => setDescription(e.target.value)} className="input" maxLength={200} />
         <input type="text" inputMode="decimal" aria-label="Valor" placeholder="Valor (ex: 12,50)" value={amount} onChange={e => setAmount(maskAmountInput(e.target.value))} className="input input-sm" />
         <input type="date" aria-label="Data" value={date} onChange={e => setDate(e.target.value)} className="input input-sm" />
-        <select aria-label="Tipo" value={type} onChange={e => setType(e.target.value as 'receita' | 'despesa')} className="input input-sm">
+        <select aria-label="Tipo" value={type} onChange={e => setType(e.target.value as TransactionType)} className="input input-sm">
           <option value="despesa">Despesa</option>
           <option value="receita">Receita</option>
         </select>

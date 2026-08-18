@@ -1,4 +1,6 @@
 using Backend.Data;
+using Backend.DTOs;
+using Backend.Filters;
 using Backend.Middleware;
 using Backend.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -13,7 +15,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Registra os controllers (API REST)
 // TransactionType é serializado como "receita"/"despesa" (e não como número)
 // graças ao [JsonConverter] declarado diretamente no enum.
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<ArgumentExceptionFilter>();
+});
 
 // Padroniza o formato de erros de validação: { message }.
 // O frontend lê apenas a propriedade "message"; sem isto, erros de
@@ -34,7 +39,7 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
         if (string.IsNullOrWhiteSpace(message))
             message = "Dados inválidos.";
 
-        return new BadRequestObjectResult(new { message });
+        return new BadRequestObjectResult(new ErrorResponse { Message = message });
     };
 });
 

@@ -11,7 +11,7 @@ namespace Backend.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
-public class TransactionsController : ControllerBase
+public class TransactionsController : ApiControllerBase
 {
     private readonly TransactionService _service;
 
@@ -32,15 +32,8 @@ public class TransactionsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<TransactionResponseDto>> Create([FromBody] CreateTransactionDto dto)
     {
-        try
-        {
-            var transaction = await _service.CreateAsync(dto);
-            return CreatedAtAction(nameof(GetById), new { id = transaction.Id }, transaction);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        var transaction = await _service.CreateAsync(dto);
+        return CreatedAtAction(nameof(GetById), new { id = transaction.Id }, transaction);
     }
 
     /// <summary>
@@ -72,7 +65,7 @@ public class TransactionsController : ControllerBase
     {
         var transaction = await _service.GetByIdAsync(id);
         if (transaction == null)
-            return NotFound(new { message = "Transação não encontrada." });
+            return NotFoundWithMessage("Transação não encontrada.");
 
         return Ok(transaction);
     }
@@ -86,18 +79,11 @@ public class TransactionsController : ControllerBase
     [HttpPut("{id}")]
     public async Task<ActionResult<TransactionResponseDto>> Update(int id, [FromBody] CreateTransactionDto dto)
     {
-        try
-        {
-            var transaction = await _service.UpdateAsync(id, dto);
-            if (transaction == null)
-                return NotFound(new { message = "Transação não encontrada." });
+        var transaction = await _service.UpdateAsync(id, dto);
+        if (transaction == null)
+            return NotFoundWithMessage("Transação não encontrada.");
 
-            return Ok(transaction);
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        return Ok(transaction);
     }
 
     /// <summary>
@@ -110,7 +96,7 @@ public class TransactionsController : ControllerBase
     {
         var deleted = await _service.DeleteAsync(id);
         if (!deleted)
-            return NotFound(new { message = "Transação não encontrada." });
+            return NotFoundWithMessage("Transação não encontrada.");
 
         return NoContent();
     }

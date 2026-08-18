@@ -3,6 +3,7 @@ import * as api from '../api';
 import ConfirmDialog from './ConfirmDialog';
 import Pagination from './Pagination';
 import { getErrorMessage } from '../utils/errors';
+import { usePagedList } from '../hooks/usePagedList';
 import type { Person } from '../types';
 
 /** Quantidade de pessoas por página na listagem. */
@@ -12,10 +13,7 @@ const PAGE_SIZE = 10;
  * Aba de cadastro de pessoas: criação, listagem (com paginação) e remoção (com cascata).
  */
 function PeopleTab() {
-  const [people, setPeople] = useState<Person[]>([]);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalItems, setTotalItems] = useState(0);
+  const { items: people, page, totalPages, totalItems, applyPagedResult, getPageAfterRemoval } = usePagedList<Person>();
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
   const [error, setError] = useState('');
@@ -29,14 +27,11 @@ function PeopleTab() {
     setLoadingList(true);
     try {
       const result = await api.getPeople({ page: targetPage, pageSize: PAGE_SIZE });
-      setPeople(result.items);
-      setPage(result.page);
-      setTotalPages(result.totalPages);
-      setTotalItems(result.totalItems);
+      applyPagedResult(result);
     }
     catch (err) { setError(getErrorMessage(err, 'Erro ao carregar pessoas.')); }
     finally { setLoadingList(false); }
-  }, []);
+  }, [applyPagedResult]);
 
   useEffect(() => { loadPeople(1); }, [loadPeople]);
 
@@ -69,7 +64,7 @@ function PeopleTab() {
       await api.deletePerson(person.id);
       setSuccess(`"${person.name}" removida.`);
       // Se a página ficou vazia após a remoção, volta uma página
-      const target = people.length === 1 && page > 1 ? page - 1 : page;
+      const target = getPageAfterRemoval(people.length);
       await loadPeople(target);
     }
     catch (err) { setError(getErrorMessage(err)); }

@@ -14,6 +14,14 @@ export function formatDate(isoDate: string): string {
   return `${day}/${month}/${year}`;
 }
 
+/** Retorna a data de hoje no formato ISO "YYYY-MM-DD" (local). */
+export function todayISO(): string {
+  const d = new Date();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${m}-${day}`;
+}
+
 /**
  * Máscara para campo de valor monetário.
  * Aceita apenas dígitos e UM separador decimal (`.` ou `,`), com no máximo

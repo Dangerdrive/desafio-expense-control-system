@@ -41,23 +41,7 @@ public class TransactionService
     /// </exception>
     public async Task<TransactionResponseDto> CreateAsync(CreateTransactionDto dto)
     {
-        // ============================================================
-        // Validação 1: Pessoa existe?
-        // Buscamos nome + idade em uma única consulta para também
-        // preencher o PersonName da resposta sem uma segunda query.
-        // ============================================================
-        var personInfo = await _personService.GetInfoAsync(dto.PersonId);
-        if (personInfo == null)
-            throw new ArgumentException("A pessoa informada não existe no cadastro.");
-
-        // ============================================================
-        // Validação 2: REGRA DE NEGÓCIO CRÍTICA
-        // Menor de 18 anos NÃO pode ter receita.
-        // Por que < 18 e não <= 17? Porque a lei considera maioridade
-        // a partir dos 18 anos completos. 18 pode; 17 não.
-        // ============================================================
-        if (personInfo.Value.Age < 18 && dto.Type == TransactionType.Receita)
-            throw new ArgumentException("Menores de 18 anos não podem cadastrar receitas, apenas despesas.");
+        var personInfo = await GetValidatedPersonInfoAsync(dto);
 
         var transaction = new Transaction
         {
@@ -71,16 +55,7 @@ public class TransactionService
         await _repository.AddAsync(transaction);
         await _repository.SaveChangesAsync();
 
-        return new TransactionResponseDto
-        {
-            Id = transaction.Id,
-            Description = transaction.Description,
-            Amount = transaction.Amount,
-            Date = transaction.Date,
-            Type = transaction.Type,
-            PersonId = transaction.PersonId,
-            PersonName = personInfo.Value.Name
-        };
+        return MapToResponse(transaction, personInfo.Name);
     }
 
     /// <summary>
@@ -96,9 +71,6 @@ public class TransactionService
     /// <param name="sort">Ordem: "date_asc" ou "date_desc" (padrão).</param>
     public async Task<PagedResult<TransactionResponseDto>> GetAllAsync(int page = 1, int pageSize = 10, DateOnly? from = null, DateOnly? to = null, string? sort = null)
     {
-        var safePageSize = Math.Clamp(pageSize, 1, 100);
-        var safePage = Math.Max(page, 1);
-
         // Inclui a navegação Person para popular o PersonName na resposta.
         var transactions = await _repository.GetAllAsync(t => t.Person);
 
@@ -116,22 +88,11 @@ public class TransactionService
             : query.OrderByDescending(t => t.Date).ThenByDescending(t => t.Id);
         var orderedList = ordered.ToList();
 
-        var items = orderedList
-            .Skip((safePage - 1) * safePageSize)
-            .Take(safePageSize)
-            .Select(t => new TransactionResponseDto
-            {
-                Id = t.Id,
-                Description = t.Description,
-                Amount = t.Amount,
-                Date = t.Date,
-                Type = t.Type,
-                PersonId = t.PersonId,
-                PersonName = t.Person?.Name ?? "Desconhecida"
-            })
-            .ToList();
-
-        return PagedResult<TransactionResponseDto>.Create(items, safePage, safePageSize, orderedList.Count);
+        return PagedResult<TransactionResponseDto>.FromSource(
+            orderedList,
+            page,
+            pageSize,
+            t => MapToResponse(t, t.Person?.Name));
     }
 
     /// <summary>
@@ -146,16 +107,7 @@ public class TransactionService
 
         var personInfo = await _personService.GetInfoAsync(transaction.PersonId);
 
-        return new TransactionResponseDto
-        {
-            Id = transaction.Id,
-            Description = transaction.Description,
-            Amount = transaction.Amount,
-            Date = transaction.Date,
-            Type = transaction.Type,
-            PersonId = transaction.PersonId,
-            PersonName = personInfo?.Name ?? "Desconhecida"
-        };
+        return MapToResponse(transaction, personInfo?.Name);
     }
 
     /// <summary>
@@ -172,13 +124,7 @@ public class TransactionService
         if (transaction == null)
             return null;
 
-        // Validações idênticas às do CreateAsync
-        var personInfo = await _personService.GetInfoAsync(dto.PersonId);
-        if (personInfo == null)
-            throw new ArgumentException("A pessoa informada não existe no cadastro.");
-
-        if (personInfo.Value.Age < 18 && dto.Type == TransactionType.Receita)
-            throw new ArgumentException("Menores de 18 anos não podem cadastrar receitas, apenas despesas.");
+        var personInfo = await GetValidatedPersonInfoAsync(dto);
 
         transaction.Description = dto.Description;
         transaction.Amount = dto.Amount;
@@ -188,16 +134,7 @@ public class TransactionService
 
         await _repository.SaveChangesAsync();
 
-        return new TransactionResponseDto
-        {
-            Id = transaction.Id,
-            Description = transaction.Description,
-            Amount = transaction.Amount,
-            Date = transaction.Date,
-            Type = transaction.Type,
-            PersonId = transaction.PersonId,
-            PersonName = personInfo.Value.Name
-        };
+        return MapToResponse(transaction, personInfo.Name);
     }
 
     /// <summary>
@@ -216,4 +153,33 @@ public class TransactionService
 
         return true;
     }
+
+    /// <summary>
+    /// Obtém a pessoa e valida as regras de negócio da transação.
+    /// </summary>
+    private async Task<(string Name, int Age)> GetValidatedPersonInfoAsync(CreateTransactionDto dto)
+    {
+        var personInfo = await _personService.GetInfoAsync(dto.PersonId);
+        if (personInfo == null)
+            throw new ArgumentException("A pessoa informada não existe no cadastro.");
+
+        if (personInfo.Value.Age < 18 && dto.Type == TransactionType.Receita)
+            throw new ArgumentException("Menores de 18 anos não podem cadastrar receitas, apenas despesas.");
+
+        return personInfo.Value;
+    }
+
+    /// <summary>
+    /// Converte uma entidade Transaction para DTO de resposta.
+    /// </summary>
+    private static TransactionResponseDto MapToResponse(Transaction transaction, string? personName) => new()
+    {
+        Id = transaction.Id,
+        Description = transaction.Description,
+        Amount = transaction.Amount,
+        Date = transaction.Date,
+        Type = transaction.Type,
+        PersonId = transaction.PersonId,
+        PersonName = personName ?? "Desconhecida"
+    };
 }
