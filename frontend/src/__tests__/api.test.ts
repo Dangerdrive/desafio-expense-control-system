@@ -269,3 +269,51 @@ describe('204 No Content handling', () => {
     expect(result).toBeUndefined();
   });
 });
+
+// ============================================================
+// RESPOSTAS MALFORMADAS (corpo não-JSON / sem { message })
+// ============================================================
+
+/** Resposta cujo corpo não é JSON válido (ex: HTML de um proxy). */
+function mockUnparseableResponse(status: number, parseError: Error) {
+  return Promise.resolve({
+    ok: status >= 200 && status < 300,
+    status,
+    json: () => Promise.reject(parseError),
+  });
+}
+
+describe('malformed response handling', () => {
+  it('should report the status code when the error body is not JSON', async () => {
+    const parseError = new Error('Unexpected token < in JSON at position 0');
+    mockFetch.mockResolvedValueOnce(mockUnparseableResponse(502, parseError));
+
+    await expect(getPeople()).rejects.toMatchObject({
+      message: expect.stringContaining('Erro 502'),
+      cause: parseError, // causa raiz preservada, não engolida
+    });
+  });
+
+  it('should report the status code when the error body has no message', async () => {
+    mockFetch.mockResolvedValueOnce(mockResponse(500, { detail: 'oops' }));
+
+    await expect(getPeople()).rejects.toThrow('Erro 500');
+  });
+
+  it('should throw a friendly error when a successful body is not JSON', async () => {
+    const parseError = new Error('Unexpected end of JSON input');
+    mockFetch.mockResolvedValueOnce(mockUnparseableResponse(200, parseError));
+
+    await expect(getTotals()).rejects.toMatchObject({
+      message: 'O servidor devolveu uma resposta inválida.',
+      cause: parseError,
+    });
+  });
+
+  it('should preserve the original network error as cause', async () => {
+    const networkError = new TypeError('Failed to fetch');
+    mockFetch.mockRejectedValueOnce(networkError);
+
+    await expect(getTotals()).rejects.toMatchObject({ cause: networkError });
+  });
+});
