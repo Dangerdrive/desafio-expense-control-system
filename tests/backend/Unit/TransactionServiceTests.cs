@@ -2,6 +2,7 @@ using Backend.Data;
 using Backend.DTOs;
 using Backend.Models;
 using Backend.Services;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Backend.Tests.Unit;
 
@@ -26,7 +27,7 @@ public class TransactionServiceTests
         await personRepo.AddAsync(person);
         await personRepo.SaveChangesAsync();
 
-        var service = new TransactionService(transactionRepo, personService);
+        var service = new TransactionService(transactionRepo, personService, NullLogger<TransactionService>.Instance);
         return (service, person.Id);
     }
 
@@ -44,7 +45,7 @@ public class TransactionServiceTests
         await personRepo.AddAsync(person);
         await personRepo.SaveChangesAsync();
 
-        var service = new TransactionService(transactionRepo, personService);
+        var service = new TransactionService(transactionRepo, personService, NullLogger<TransactionService>.Instance);
         return (service, person.Id);
     }
 
@@ -155,7 +156,7 @@ public class TransactionServiceTests
         await personRepo.AddAsync(person);
         await personRepo.SaveChangesAsync();
 
-        var service = new TransactionService(transactionRepo, personService);
+        var service = new TransactionService(transactionRepo, personService, NullLogger<TransactionService>.Instance);
         var dto = new CreateTransactionDto
         {
             Description = "Freela", Amount = 200m, Date = new DateOnly(2026, 1, 15), Type = TransactionType.Receita, PersonId = person.Id
@@ -179,7 +180,7 @@ public class TransactionServiceTests
         await personRepo.AddAsync(person);
         await personRepo.SaveChangesAsync();
 
-        var service = new TransactionService(transactionRepo, personService);
+        var service = new TransactionService(transactionRepo, personService, NullLogger<TransactionService>.Instance);
         var dto = new CreateTransactionDto
         {
             Description = "Salário", Amount = 2000m, Date = new DateOnly(2026, 1, 15), Type = TransactionType.Receita, PersonId = person.Id
@@ -203,7 +204,7 @@ public class TransactionServiceTests
         // Arrange
         using var context = TestDatabase.CreateContext();
         var personService = new PersonService(new Repository<Person>(context));
-        var service = new TransactionService(new Repository<Transaction>(context), personService);
+        var service = new TransactionService(new Repository<Transaction>(context), personService, NullLogger<TransactionService>.Instance);
         var dto = new CreateTransactionDto
         {
             Description = "Teste", Amount = 100m, Date = new DateOnly(2026, 1, 15), Type = TransactionType.Despesa, PersonId = 999
@@ -212,6 +213,25 @@ public class TransactionServiceTests
         // Act & Assert
         var ex = await Assert.ThrowsAsync<ArgumentException>(() => service.CreateAsync(dto));
         Assert.Contains("não existe", ex.Message);
+    }
+
+    // ============================================================
+    // DATA AUSENTE
+    // ============================================================
+
+    [Fact]
+    public async Task CreateAsync_WithoutDate_ShouldThrowArgumentException()
+    {
+        // Arrange — DTO sem data (chamada interna, sem o [Required] do model binding)
+        var (service, personId) = await SetupAdultAsync();
+        var dto = new CreateTransactionDto
+        {
+            Description = "Teste", Amount = 100m, Date = null, Type = TransactionType.Despesa, PersonId = personId
+        };
+
+        // Act & Assert — erro de validação explícito, não um NullReferenceException
+        var ex = await Assert.ThrowsAsync<ArgumentException>(() => service.CreateAsync(dto));
+        Assert.Contains("data é obrigatória", ex.Message);
     }
 
     // ============================================================
@@ -224,7 +244,7 @@ public class TransactionServiceTests
         // Arrange
         using var context = TestDatabase.CreateContext();
         var personService = new PersonService(new Repository<Person>(context));
-        var service = new TransactionService(new Repository<Transaction>(context), personService);
+        var service = new TransactionService(new Repository<Transaction>(context), personService, NullLogger<TransactionService>.Instance);
 
         // Act
         var result = await service.GetAllAsync();
@@ -251,7 +271,7 @@ public class TransactionServiceTests
         await transactionRepo.AddAsync(new Transaction { Description = "T2", Amount = 50, Type = TransactionType.Despesa, PersonId = person.Id });
         await transactionRepo.SaveChangesAsync();
 
-        var service = new TransactionService(transactionRepo, personService);
+        var service = new TransactionService(transactionRepo, personService, NullLogger<TransactionService>.Instance);
 
         // Act
         var result = await service.GetAllAsync();
@@ -339,7 +359,7 @@ public class TransactionServiceTests
         await transactionRepo.AddAsync(new Transaction { Description = "Dez", Amount = 300, Date = new DateOnly(2026, 12, 20), Type = TransactionType.Despesa, PersonId = person.Id });
         await transactionRepo.SaveChangesAsync();
 
-        var service = new TransactionService(transactionRepo, personService);
+        var service = new TransactionService(transactionRepo, personService, NullLogger<TransactionService>.Instance);
 
         // Act — filtra de março a novembro (inclusivo)
         var result = await service.GetAllAsync(1, 10, new DateOnly(2026, 3, 1), new DateOnly(2026, 11, 30));
@@ -367,7 +387,7 @@ public class TransactionServiceTests
         await transactionRepo.AddAsync(new Transaction { Description = "Jun", Amount = 200, Date = new DateOnly(2026, 6, 15), Type = TransactionType.Despesa, PersonId = person.Id });
         await transactionRepo.SaveChangesAsync();
 
-        var service = new TransactionService(transactionRepo, personService);
+        var service = new TransactionService(transactionRepo, personService, NullLogger<TransactionService>.Instance);
 
         // Act — sort crescente por data
         var result = await service.GetAllAsync(sort: "date_asc");
@@ -393,7 +413,7 @@ public class TransactionServiceTests
         await transactionRepo.AddAsync(new Transaction { Description = "Dez", Amount = 300, Date = new DateOnly(2026, 12, 20), Type = TransactionType.Despesa, PersonId = person.Id });
         await transactionRepo.SaveChangesAsync();
 
-        var service = new TransactionService(transactionRepo, personService);
+        var service = new TransactionService(transactionRepo, personService, NullLogger<TransactionService>.Instance);
 
         // Act — sem sort (padrão: mais recente primeiro)
         var result = await service.GetAllAsync();
@@ -422,7 +442,7 @@ public class TransactionServiceTests
         await transactionRepo.AddAsync(new Transaction { Description = "Mai", Amount = 5, Date = new DateOnly(2026, 5, 1), Type = TransactionType.Despesa, PersonId = person.Id });
         await transactionRepo.SaveChangesAsync();
 
-        var service = new TransactionService(transactionRepo, personService);
+        var service = new TransactionService(transactionRepo, personService, NullLogger<TransactionService>.Instance);
 
         // Act — página 2, 2 itens por página, mais recente primeiro
         var result = await service.GetAllAsync(page: 2, pageSize: 2);

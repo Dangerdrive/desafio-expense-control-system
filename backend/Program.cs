@@ -85,7 +85,23 @@ using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     if (dbContext.Database.IsRelational())
-        dbContext.Database.Migrate();
+    {
+        try
+        {
+            dbContext.Database.Migrate();
+        }
+        catch (Exception ex)
+        {
+            // Falha de migração deixa a API sem esquema válido: registramos o motivo
+            // (o log é a única pista, pois nenhuma requisição chegou ainda) e
+            // propagamos para abortar o start em vez de subir uma API quebrada.
+            scope.ServiceProvider
+                .GetRequiredService<ILoggerFactory>()
+                .CreateLogger("Backend.Startup")
+                .LogCritical(ex, "Falha ao aplicar as migrations do banco de dados. A aplicação não será iniciada.");
+            throw;
+        }
+    }
 }
 
 // Tratamento global de exceções — deve ser o primeiro middleware do pipeline

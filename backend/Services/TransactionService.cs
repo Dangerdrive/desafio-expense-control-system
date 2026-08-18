@@ -16,13 +16,21 @@ namespace Backend.Services;
 /// </summary>
 public class TransactionService
 {
+    /// <summary>Nome exibido quando a pessoa associada não pode ser resolvida.</summary>
+    private const string UnknownPersonName = "Desconhecida";
+
     private readonly IRepository<Transaction> _repository;
     private readonly PersonService _personService;
+    private readonly ILogger<TransactionService> _logger;
 
-    public TransactionService(IRepository<Transaction> repository, PersonService personService)
+    public TransactionService(
+        IRepository<Transaction> repository,
+        PersonService personService,
+        ILogger<TransactionService> logger)
     {
         _repository = repository;
         _personService = personService;
+        _logger = logger;
     }
 
     /// <summary>
@@ -51,7 +59,7 @@ public class TransactionService
             throw new ArgumentException("A pessoa informada não existe no cadastro.");
 
         // ============================================================
-        // Validação 2: REGRA DE NEGÓCIO CRÍTICA
+        // Validação 2: REGRA DE NEGÓCIO CRÍTICA (idade)
         // Menor de 18 anos NÃO pode ter receita.
         // Por que < 18 e não <= 17? Porque a lei considera maioridade
         // a partir dos 18 anos completos. 18 pode; 17 não.
@@ -63,7 +71,7 @@ public class TransactionService
         {
             Description = dto.Description,
             Amount = dto.Amount,
-            Date = dto.Date!.Value,
+            Date = RequireDate(dto),
             Type = dto.Type,
             PersonId = dto.PersonId
         };
@@ -127,7 +135,7 @@ public class TransactionService
                 Date = t.Date,
                 Type = t.Type,
                 PersonId = t.PersonId,
-                PersonName = t.Person?.Name ?? "Desconhecida"
+                PersonName = ResolvePersonName(t.Person?.Name, t.PersonId, t.Id)
             })
             .ToList();
 
@@ -154,7 +162,7 @@ public class TransactionService
             Date = transaction.Date,
             Type = transaction.Type,
             PersonId = transaction.PersonId,
-            PersonName = personInfo?.Name ?? "Desconhecida"
+            PersonName = ResolvePersonName(personInfo?.Name, transaction.PersonId, transaction.Id)
         };
     }
 
@@ -182,7 +190,7 @@ public class TransactionService
 
         transaction.Description = dto.Description;
         transaction.Amount = dto.Amount;
-        transaction.Date = dto.Date!.Value;
+        transaction.Date = RequireDate(dto);
         transaction.Type = dto.Type;
         transaction.PersonId = dto.PersonId;
 
@@ -215,5 +223,37 @@ public class TransactionService
         await _repository.SaveChangesAsync();
 
         return true;
+    }
+
+    /// <summary>
+    /// Garante que a data foi informada. O [Required] do DTO cobre as chamadas
+    /// via HTTP, mas um chamador interno (ou um DTO montado em código) poderia
+    /// passar null — sem este guard o resultado seria um NullReferenceException
+    /// convertido em 500 genérico, escondendo o campo que faltou.
+    /// </summary>
+    /// <exception cref="ArgumentException">Se <c>dto.Date</c> for null.</exception>
+    private static DateOnly RequireDate(CreateTransactionDto dto)
+    {
+        if (dto.Date == null)
+            throw new ArgumentException("A data é obrigatória.");
+
+        return dto.Date.Value;
+    }
+
+    /// <summary>
+    /// Resolve o nome exibido da pessoa associada. Quando a pessoa não pode ser
+    /// resolvida, isso indica dados órfãos (a FK deveria garantir a existência):
+    /// registramos um aviso em vez de apenas devolver o texto de fallback.
+    /// </summary>
+    private string ResolvePersonName(string? personName, int personId, int transactionId)
+    {
+        if (!string.IsNullOrEmpty(personName))
+            return personName;
+
+        _logger.LogWarning(
+            "Transação {TransactionId} referencia a pessoa {PersonId}, que não foi encontrada.",
+            transactionId, personId);
+
+        return UnknownPersonName;
     }
 }

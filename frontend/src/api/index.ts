@@ -16,8 +16,24 @@ import type {
 const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:5000/api';
 
 /**
+ * Extrai a mensagem de erro do corpo JSON do backend ({ message }).
+ * Retorna null quando o corpo não segue esse contrato.
+ */
+function extractMessage(body: unknown): string | null {
+  if (typeof body === 'object' && body !== null && 'message' in body) {
+    const { message } = body as { message?: unknown };
+    if (typeof message === 'string' && message.trim() !== '') return message;
+  }
+  return null;
+}
+
+/**
  * Helper genérico para requisições HTTP.
  * Lança erro com a mensagem do backend em caso de falha.
+ *
+ * Toda falha vira um Error com mensagem legível em PT-BR, mas o erro original
+ * é preservado em `cause` (e logado) para que a causa raiz — timeout de rede,
+ * HTML de proxy no lugar de JSON, etc. — não seja perdida no caminho.
  */
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
   let response: Response;
@@ -26,22 +42,51 @@ async function request<T>(url: string, options?: RequestInit): Promise<T> {
       headers: { 'Content-Type': 'application/json' },
       ...options,
     });
-  } catch {
+  } catch (err) {
     // Falha de rede (backend offline, CORS bloqueado, etc.).
     // O fetch lança um TypeError genérico ("Failed to fetch"); aqui convertemos
     // para uma mensagem amigável em PT-BR em vez de vazar o texto do browser.
-    throw new Error('Não foi possível conectar ao servidor. Verifique se o backend está em execução.');
+    console.error(`Falha de rede em ${options?.method ?? 'GET'} ${url}:`, err);
+    throw new Error(
+      'Não foi possível conectar ao servidor. Verifique se o backend está em execução.',
+      { cause: err },
+    );
   }
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Erro desconhecido' }));
-    throw new Error(error.message || `Erro ${response.status}`);
+    let body: unknown = null;
+    let parseError: unknown = null;
+    try {
+      body = await response.json();
+    } catch (err) {
+      // Resposta de erro sem JSON válido (ex: 502 devolvendo HTML).
+      parseError = err;
+    }
+
+    const message = extractMessage(body);
+    if (message === null) {
+      console.error(
+        `Resposta de erro sem mensagem em ${options?.method ?? 'GET'} ${url} (HTTP ${response.status}):`,
+        parseError ?? body,
+      );
+    }
+
+    throw new Error(message ?? `Erro ${response.status} ao comunicar com o servidor.`, {
+      cause: parseError ?? body,
+    });
   }
 
   // 204 No Content (usado no DELETE)
   if (response.status === 204) return undefined as T;
 
-  return response.json();
+  try {
+    return (await response.json()) as T;
+  } catch (err) {
+    // Corpo de sucesso ilegível: sem este tratamento o SyntaxError cru do
+    // JSON.parse ("Unexpected token <") chegaria à UI.
+    console.error(`Resposta inválida em ${options?.method ?? 'GET'} ${url}:`, err);
+    throw new Error('O servidor devolveu uma resposta inválida.', { cause: err });
+  }
 }
 
 // ===================== PESSOAS =====================
