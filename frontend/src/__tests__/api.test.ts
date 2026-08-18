@@ -11,7 +11,7 @@ const mockFetch = vi.fn();
 vi.stubGlobal('fetch', mockFetch);
 
 // Importações após o mock (para que usem o fetch mockado)
-import { getPeople, createPerson, deletePerson, getTransactions, createTransaction, getTotals } from '../api';
+import { getPeople, createPerson, deletePerson, getTransactions, createTransaction, updateTransaction, deleteTransaction, getTotals } from '../api';
 
 function mockResponse(status: number, data: unknown) {
   return Promise.resolve({
@@ -195,6 +195,51 @@ describe('createTransaction', () => {
 });
 
 // ============================================================
+// PUT /api/transactions/:id
+// ============================================================
+
+describe('updateTransaction', () => {
+  it('should send a PUT with the payload and return the updated transaction', async () => {
+    const dto = { description: 'Conta de Água', amount: 180, date: '2026-02-01', type: 'despesa' as const, personId: 1 };
+    mockFetch.mockResolvedValueOnce(mockResponse(200, { id: 7, ...dto, personName: 'João' }));
+
+    const result = await updateTransaction(7, dto);
+
+    expect(result.description).toBe('Conta de Água');
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:5000/api/transactions/7',
+      expect.objectContaining({ method: 'PUT', body: JSON.stringify(dto) }),
+    );
+  });
+
+  it('should throw when the transaction does not exist', async () => {
+    mockFetch.mockResolvedValueOnce(mockResponse(404, { message: 'Transação não encontrada.' }));
+
+    await expect(
+      updateTransaction(999, { description: 'A', amount: 10, date: '2026-01-15', type: 'despesa', personId: 1 })
+    ).rejects.toThrow('Transação não encontrada.');
+  });
+});
+
+// ============================================================
+// DELETE /api/transactions/:id
+// ============================================================
+
+describe('deleteTransaction', () => {
+  it('should send a DELETE and return void on 204', async () => {
+    mockFetch.mockResolvedValueOnce(mockResponse(204, null));
+
+    const result = await deleteTransaction(9);
+
+    expect(result).toBeUndefined();
+    expect(mockFetch).toHaveBeenCalledWith(
+      'http://localhost:5000/api/transactions/9',
+      expect.objectContaining({ method: 'DELETE' }),
+    );
+  });
+});
+
+// ============================================================
 // GET /api/totals
 // ============================================================
 
@@ -267,5 +312,27 @@ describe('204 No Content handling', () => {
     // Não deve lançar erro tentando fazer .json() em corpo vazio
     const result = await deletePerson(1);
     expect(result).toBeUndefined();
+  });
+});
+
+// ============================================================
+// ERROR BODY FALLBACKS
+// ============================================================
+
+describe('error body fallbacks', () => {
+  it('should fall back to the status code when the error body has no message', async () => {
+    mockFetch.mockResolvedValueOnce(mockResponse(503, {}));
+
+    await expect(getPeople()).rejects.toThrow('Erro 503');
+  });
+
+  it('should fall back to a generic message when the error body is not JSON', async () => {
+    mockFetch.mockResolvedValueOnce(Promise.resolve({
+      ok: false,
+      status: 500,
+      json: () => Promise.reject(new SyntaxError('Unexpected token < in JSON')),
+    }));
+
+    await expect(getPeople()).rejects.toThrow('Erro desconhecido');
   });
 });

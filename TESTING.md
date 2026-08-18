@@ -1,6 +1,6 @@
 # 🧪 Documentação de Testes — Expense Control System
 
-> **Status:** ✅ Suite completa com **139 testes** (92 backend + 47 frontend) + **5 E2E (Playwright)**, todos passando.
+> **Status:** ✅ Suite completa com **242 testes** (111 backend + 131 frontend) + **5 E2E (Playwright)**, todos passando.
 
 ---
 
@@ -8,12 +8,12 @@
 
 | Camada | Framework | Tipo | Quantidade | Status |
 |--------|-----------|------|-----------|--------|
-| Backend — Unit | xUnit + EF Core InMemory | Serviços + Middleware + Repository | 47 | ✅ 47/47 |
+| Backend — Unit | xUnit + EF Core InMemory | Serviços + Middleware + Repository + Converter | 66 | ✅ 66/66 |
 | Backend — Integration | xUnit + WebApplicationFactory | Controllers HTTP + Contrato | 45 | ✅ 45/45 |
-| Frontend — Unit | Vitest + mock fetch | API layer | 17 | ✅ 17/17 |
-| Frontend — Component | Vitest + Testing Library | React components | 24 | ✅ 24/24 |
+| Frontend — Unit | Vitest + mock fetch | API layer + utils | 48 | ✅ 48/48 |
+| Frontend — Component | Vitest + Testing Library | React components | 77 | ✅ 77/77 |
 | Frontend — Contrato | Vitest (contracts/api-contract.json) | Schema da API | 6 | ✅ 6/6 |
-| **TOTAL** | | | **139** | **✅ 139/139** |
+| **TOTAL** | | | **242** | **✅ 242/242** |
 | E2E — Playwright | Playwright + Chromium | Fluxos completos (UI + API) | 5 | ✅ 5/5 |
 
 ---
@@ -105,6 +105,17 @@ npx vitest run --reporter=verbose    # Output detalhado
 | 1 | `InvokeAsync_WhenNextThrows_ShouldReturn500WithUnifiedMessage` | Exceção não tratada → 500 `{ message }` |
 | 2 | `InvokeAsync_WhenNextSucceeds_ShouldNotInterfere` | Resposta de sucesso não é alterada |
 
+### TransactionTypeJsonConverterTests (19 testes)
+
+| # | Teste | Cenário |
+|---|-------|---------|
+| 1-4 | `Read_WithStringValue_ShouldParseCaseInsensitive` | `"receita"`, `"despesa"`, `"Receita"`, `"DESPESA"` |
+| 5-6 | `Read_WithDefinedNumericValue_ShouldParse` | `1` → Receita, `2` → Despesa |
+| 7-15 | `Read_WithInvalidValue_ShouldThrowWithPtBrMessage` | String inválida/vazia, `0`, `3`, `1.5`, `true`, `null`, `{}`, `[]` |
+| 16-17 | `Write_ShouldSerializeAsLowercaseString` | Contrato em minúsculas |
+| 18 | `Write_WithUndefinedEnumValue_ShouldSerializeLowercasedName` | Valor fora do enum |
+| 19 | `RoundTrip_ShouldPreserveValue` | Serializa → desserializa |
+
 ---
 
 ## 📋 Backend — Testes de Integração
@@ -178,7 +189,7 @@ npx vitest run --reporter=verbose    # Output detalhado
 
 ## 📋 Frontend — Testes da API Layer
 
-### api.test.ts (17 testes)
+### api.test.ts (22 testes)
 
 | # | Teste | Cenário |
 |---|-------|---------|
@@ -199,12 +210,27 @@ npx vitest run --reporter=verbose    # Output detalhado
 | 15 | `createTransaction` — network failure | `Failed to fetch` |
 | 16 | `getTotals` — network failure | `Network error` |
 | 17 | `deletePerson` — 204 sem body | Não tenta parsear JSON em 204 |
+| 18 | `updateTransaction` — sucesso | PUT com payload correto |
+| 19 | `updateTransaction` — 404 | Transação inexistente |
+| 20 | `deleteTransaction` — sucesso | DELETE → void (204) |
+| 21 | erro sem `message` | Fallback `Erro {status}` |
+| 22 | corpo de erro não-JSON | Fallback `Erro desconhecido` |
+
+### utils.test.ts (26 testes)
+
+| # | Teste | Cenário |
+|---|-------|---------|
+| 1-6 | `getErrorMessage` | `Error`, mensagem vazia → fallback, string, string em branco, tipos não-`Error`, fallback custom |
+| 7-9 | `formatCurrency` | Positivo, zero, negativo (BRL) |
+| 10-11 | `formatDate` | ISO → `DD/MM/YYYY`; entrada inválida devolvida sem alteração |
+| 12-19 | `maskAmountInput` | Remove caracteres inválidos, normaliza `,`→`.`, um só separador, máx. 2 decimais |
+| 20-26 | `parseAmountInput` | `12,34` → `12.34`, zero/negativo/3 decimais/malformado → `null` |
 
 ---
 
 ## 📋 Frontend — Testes de Componente
 
-### App.test.tsx (24 testes)
+### App.test.tsx (25 testes)
 
 | # | Teste | Componente |
 |---|-------|-----------|
@@ -232,6 +258,61 @@ npx vitest run --reporter=verbose    # Output detalhado
 | 22 | Erro regra de negócio na UI | TransactionsTab |
 | 23 | Edição de transação (chama updateTransaction) | TransactionsTab |
 | 24 | Exclusão de transação (modal + deleteTransaction) | TransactionsTab |
+| 25 | Volta para a aba Pessoas e marca como ativa | App |
+
+### PeopleTab.test.tsx (14 testes)
+
+| # | Teste | Cenário |
+|---|-------|---------|
+| 1-4 | Listagem | Loading, erro da API, fallback genérico, marcação de menores (🔞) |
+| 5-9 | Criação | Nome em branco, idade ausente, idade fora de 0-150, trim + reset + reload, botão desabilitado ao salvar |
+| 10-14 | Remoção | Cancelar no modal, confirmar, recuo de página quando a página esvazia, erro na exclusão |
+
+### TransactionsTab.test.tsx (17 testes)
+
+| # | Teste | Cenário |
+|---|-------|---------|
+| 1-6 | Listagem | Erro da API, fallback genérico, formatação pt-BR + badges, menores no seletor, submit desabilitado sem pessoas |
+| 7-8 | Filtros | Período (de/até) e ordenação recarregam na página 1 |
+| 9-13 | Formulário | Descrição/valor/pessoa obrigatórios, máscara do valor, `12,34` enviado como número |
+| 14 | Edição | Cancelar limpa o formulário e sai do modo edição |
+| 15-17 | Remoção | Cancelar no modal, recuo de página, erro na exclusão |
+
+### TotalsTab.test.tsx (5 testes)
+
+| # | Teste | Cenário |
+|---|-------|---------|
+| 1 | Sem pessoas | Mensagem de lista vazia + total geral |
+| 2-3 | Saldo | Negativo → vermelho/`balance-negative`; positivo → verde/`balance-positive` |
+| 4 | Atualizar | Botão refaz a consulta |
+| 5 | Erro não-`Error` | Fallback `Erro ao consultar totais.` |
+
+### Pagination.test.tsx (6 testes)
+
+| # | Teste | Cenário |
+|---|-------|---------|
+| 1 | `totalPages <= 1` | Não renderiza nada |
+| 2 | Info da página | "Página X de Y (N itens)" |
+| 3-4 | Limites | Botão anterior/próxima desabilitado na primeira/última página |
+| 5-6 | Navegação | `onPageChange(page ± 1)` |
+
+### ConfirmDialog.test.tsx (5 testes)
+
+| # | Teste | Cenário |
+|---|-------|---------|
+| 1 | Fechado | Não renderiza nada |
+| 2-3 | Estilos/labels | Padrão (`btn-primary`) e variante `danger` com labels custom |
+| 4 | Callbacks | `onConfirm`/`onCancel` |
+| 5 | Overlay | Clique no overlay cancela; clique no diálogo não |
+
+### ErrorBoundary.test.tsx (5 testes)
+
+| # | Teste | Cenário |
+|---|-------|---------|
+| 1 | Sem erro | Renderiza os filhos |
+| 2-3 | Fallback | Mensagem do erro e mensagem padrão quando vazia |
+| 4 | `componentDidCatch` | Loga o erro capturado |
+| 5 | Reset | "Tentar novamente" volta a renderizar os filhos |
 
 ### contract.test.ts (6 testes)
 
@@ -261,7 +342,7 @@ npx vitest run --reporter=verbose    # Output detalhado
 │                 │  (Controllers) │     WebAppFactory │
 │                ─┴────────────────┴─                  │
 │          ┌─────────────────────────────┐             │
-│          │       Unit Tests            │  ← 94 tests │
+│          │       Unit Tests            │  ← 197 tests│
 │          │  (Services + API + Comps)   │             │
 │          └─────────────────────────────┘             │
 │                                                      │
@@ -299,7 +380,8 @@ expense-control-system/
 │       │   ├── TransactionServiceTests.cs # 21 testes
 │       │   ├── TotalsServiceTests.cs   # 7 testes
 │       │   ├── RepositoryTests.cs      # 8 testes
-│       │   └── ExceptionHandlingMiddlewareTests.cs # 2 testes
+│       │   ├── ExceptionHandlingMiddlewareTests.cs # 2 testes
+│       │   └── TransactionTypeJsonConverterTests.cs # 19 testes
 │       └── Integration/
 │           ├── PeopleControllerTests.cs    # 13 testes
 │           ├── TransactionsControllerTests.cs # 23 testes
@@ -310,8 +392,15 @@ expense-control-system/
     └── src/
         ├── test-setup.ts               # Setup Testing Library
         └── __tests__/
-            ├── api.test.ts             # 17 testes
-            ├── App.test.tsx            # 24 testes
+            ├── api.test.ts             # 22 testes
+            ├── utils.test.ts           # 26 testes
+            ├── App.test.tsx            # 25 testes
+            ├── PeopleTab.test.tsx      # 14 testes
+            ├── TransactionsTab.test.tsx # 17 testes
+            ├── TotalsTab.test.tsx      # 5 testes
+            ├── Pagination.test.tsx     # 6 testes
+            ├── ConfirmDialog.test.tsx  # 5 testes
+            ├── ErrorBoundary.test.tsx  # 5 testes
             └── contract.test.ts        # 6 testes
 ```
 
@@ -387,8 +476,9 @@ Auditoria de qualidade realizada para identificar gaps e melhorias.
 
 - **Antes (da auditoria):** 66 testes (43 backend + 23 frontend)
 - **Depois (da auditoria):** 86 testes (52 backend + 34 frontend)
-- **Atualmente:** 139 testes (92 backend + 47 frontend) + 5 E2E (Playwright)
-- **Aumento (desde a auditoria):** +73 testes (+111%) na suite unitária/integração, +5 E2E
+- **Atualmente:** 242 testes (111 backend + 131 frontend) + 5 E2E (Playwright)
+- **Aumento (desde a auditoria):** +176 testes (+267%) na suite unitária/integração, +5 E2E
+- **Cobertura do frontend (v8):** 80,5% → 98,9% statements (funções: 75,4% → 98,5%)
 - **Cobertura de validação de entrada:** 0% → 100%
 - **Cobertura de boundary conditions:** 80% → 100%
 - **Cobertura de UI states (loading/error):** 0% → 100%

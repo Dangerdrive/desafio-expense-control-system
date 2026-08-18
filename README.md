@@ -2,7 +2,7 @@
 
 Sistema full-stack para controle de gastos residenciais — cadastro de pessoas, transações financeiras (receitas e despesas) e consulta de totais consolidados.
 
-> **Status do projeto:** ✅ Funcional e testado — **139 testes (92 backend + 47 frontend), 100% passando** + 5 testes E2E (Playwright).  
+> **Status do projeto:** ✅ Funcional e testado — **242 testes (111 backend + 131 frontend), 100% passando** + 5 testes E2E (Playwright).  
 > **Contexto:** Desafio técnico de desenvolvimento full-stack.  
 > **Especificação original:** [desafio.md](desafio.md)
 
@@ -283,12 +283,12 @@ Consulte [API_REFERENCE.md](API_REFERENCE.md) para documentação detalhada com 
 
 | Camada | Framework | Qtde. | Comando |
 |--------|-----------|-------|---------|
-| Backend — Unit | xUnit + EF Core InMemory | 47 | `cd tests/backend && dotnet test --filter "Unit"` |
+| Backend — Unit | xUnit + EF Core InMemory | 66 | `cd tests/backend && dotnet test --filter "Unit"` |
 | Backend — Integration | WebApplicationFactory | 45 | `cd tests/backend && dotnet test --filter "Integration"` |
-| Frontend — API | Vitest + mock fetch | 17 | `cd frontend && npm test` |
-| Frontend — Component | Vitest + Testing Library | 24 | `cd frontend && npm test` |
+| Frontend — API + utils | Vitest + mock fetch | 48 | `cd frontend && npm test` |
+| Frontend — Component | Vitest + Testing Library | 77 | `cd frontend && npm test` |
 | Frontend — Contrato | Vitest (contracts/api-contract.json) | 6 | `cd frontend && npm test` |
-| **TOTAL (unitário/integração)** | | **139** | |
+| **TOTAL (unitário/integração)** | | **242** | |
 | E2E — Playwright | Playwright + Chromium | 5 | `cd frontend && npm run test:e2e` |
 
 ```bash
@@ -306,7 +306,7 @@ Consulte [TESTING.md](TESTING.md) para a documentação completa da suite de tes
 |-----------|----------|
 | [SETUP.md](SETUP.md) | Guia de instalação, configuração e troubleshooting |
 | [API_REFERENCE.md](API_REFERENCE.md) | Referência completa dos endpoints REST |
-| [TESTING.md](TESTING.md) | Documentação da suite de 139 testes |
+| [TESTING.md](TESTING.md) | Documentação da suite de 242 testes |
 | [IMPROVEMENTS.md](IMPROVEMENTS.md) | Plano de melhorias com priorização |
 | [desafio.md](desafio.md) | Especificação original do desafio técnico |
 
