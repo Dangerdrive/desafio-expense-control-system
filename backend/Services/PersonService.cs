@@ -50,9 +50,6 @@ public class PersonService
     /// <returns>Envelope paginado com os itens da página.</returns>
     public async Task<PagedResult<PersonResponseDto>> GetAllAsync(int page = 1, int pageSize = 10)
     {
-        var safePageSize = Math.Clamp(pageSize, 1, 100);
-        var safePage = Math.Max(page, 1);
-
         var people = await _repository.GetAllAsync();
 
         // Ordenação e projeção são feitas em memória após obter os dados.
@@ -60,11 +57,7 @@ public class PersonService
         // mas para este escopo, listar tudo e ordenar em memória é perfeitamente aceitável.
         var ordered = people.OrderBy(p => p.Name).ToList();
 
-        return PagedResult<PersonResponseDto>.Create(
-            ordered.Skip((safePage - 1) * safePageSize).Take(safePageSize).Select(MapToResponse).ToList(),
-            safePage,
-            safePageSize,
-            ordered.Count);
+        return PagedResult<PersonResponseDto>.FromSource(ordered, page, pageSize, MapToResponse);
     }
 
     /// <summary>

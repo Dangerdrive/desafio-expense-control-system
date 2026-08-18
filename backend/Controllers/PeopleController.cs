@@ -10,7 +10,7 @@ namespace Backend.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/[controller]")]
-public class PeopleController : ControllerBase
+public class PeopleController : ApiControllerBase
 {
     private readonly PersonService _service;
 
@@ -54,7 +54,7 @@ public class PeopleController : ControllerBase
     {
         var person = await _service.GetByIdAsync(id);
         if (person == null)
-            return NotFound(new { message = "Pessoa não encontrada." });
+            return NotFoundWithMessage("Pessoa não encontrada.");
 
         return Ok(person);
     }
@@ -70,7 +70,7 @@ public class PeopleController : ControllerBase
     {
         var deleted = await _service.DeleteAsync(id);
         if (!deleted)
-            return NotFound(new { message = "Pessoa não encontrada." });
+            return NotFoundWithMessage("Pessoa não encontrada.");
 
         return NoContent();
     }

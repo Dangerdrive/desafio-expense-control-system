@@ -3,6 +3,14 @@ using Backend.Models;
 
 namespace Backend.DTOs;
 
+/// <summary>
+/// Resposta padronizada para erros da API.
+/// </summary>
+public class ErrorResponse
+{
+    public string Message { get; set; } = string.Empty;
+}
+
 // ===================== PESSOA =====================
 
 /// <summary>
@@ -153,5 +161,30 @@ public class PagedResult<T>
             HasNext = (page < 1 ? 1 : page) * safePageSize < totalItems,
             HasPrevious = page > 1
         };
+    }
+
+    /// <summary>
+    /// Monta um PagedResult a partir do conjunto completo, aplicando
+    /// normalização, paginação e projeção.
+    /// </summary>
+    public static PagedResult<T> FromSource<TSource>(
+        IEnumerable<TSource> source,
+        int page,
+        int pageSize,
+        Func<TSource, T> projection)
+    {
+        var safePageSize = Math.Clamp(pageSize, 1, 100);
+        var safePage = Math.Max(page, 1);
+        var sourceItems = source.ToList();
+
+        return Create(
+            sourceItems
+                .Skip((safePage - 1) * safePageSize)
+                .Take(safePageSize)
+                .Select(projection)
+                .ToList(),
+            safePage,
+            safePageSize,
+            sourceItems.Count);
     }
 }
