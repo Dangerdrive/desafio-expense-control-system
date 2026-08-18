@@ -204,7 +204,7 @@ public class TransactionsControllerTests : IClassFixture<TestWebApplicationFacto
         var transactions = await response.Content.ReadFromJsonAsync<PagedResult<TransactionResponseDto>>();
 
         // Assert — a transação deve exibir o nome da pessoa (não "Desconhecida")
-        var transaction = Assert.Single(transactions!.Items.Where(t => t.Description == description));
+        var transaction = Assert.Single(transactions!.Items, t => t.Description == description);
         Assert.Equal("Maria Silva", transaction.PersonName);
     }
 

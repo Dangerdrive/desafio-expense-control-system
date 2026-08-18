@@ -59,12 +59,23 @@ builder.Services.AddScoped<PersonService>();
 builder.Services.AddScoped<TransactionService>();
 builder.Services.AddScoped<TotalsService>();
 
-// Configura CORS para permitir requisições do frontend React
+// Configura CORS para permitir requisições do frontend React.
+// As origens vêm de Cors:AllowedOrigins (appsettings / variáveis de ambiente),
+// para que o deploy aponte para o domínio real sem recompilar. Curingas ("*")
+// são rejeitados: liberar qualquer origem permitiria que qualquer site
+// chamasse a API pelo navegador da vítima.
+var allowedOrigins = builder.Configuration
+    .GetSection("Cors:AllowedOrigins")
+    .Get<string[]>() ?? ["http://localhost:5173"]; // Vite dev server
+
+if (allowedOrigins.Any(origin => origin.Contains('*')))
+    throw new InvalidOperationException("Cors:AllowedOrigins não aceita curingas; informe as origens explicitamente.");
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:5173") // Vite dev server
+        policy.WithOrigins(allowedOrigins)
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
@@ -91,6 +102,12 @@ using (var scope = app.Services.CreateScope())
 // Tratamento global de exceções — deve ser o primeiro middleware do pipeline
 // para capturar erros de qualquer middleware posterior (MVC, CORS, etc.).
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+// Cabeçalhos de segurança nas respostas da API. O Swagger UI é servido pela
+// própria aplicação (HTML + JS) e seria bloqueado pela CSP, então fica de fora.
+app.UseWhen(
+    context => !context.Request.Path.StartsWithSegments("/swagger"),
+    branch => branch.UseMiddleware<SecurityHeadersMiddleware>());
 
 if (app.Environment.IsDevelopment())
 {
